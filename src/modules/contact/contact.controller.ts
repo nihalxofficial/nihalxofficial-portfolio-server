@@ -28,6 +28,7 @@ export const getMessages = catchAsync(async (req, res) => {
     status: query.status,
     search: query.search,
     sort: query.sort,
+    dir: query.dir,
     delivery: query.delivery,
     from: query.from,
     to: query.to,

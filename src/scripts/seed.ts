@@ -548,8 +548,8 @@ async function seed() {
       location: "Mirsarai, Chattogram, Bangladesh",
       availability: "Open to offers / Ready to interview",
       // Empty coordinates make the contact map geocode the location text.
-      mapLat: undefined,
-      mapLng: undefined,
+      mapLat: "",
+      mapLng: "",
       mapZoom: 12,
       mapEmbedUrl: "",
     },

@@ -18,6 +18,7 @@ export const contactQuerySchema = z.object({
   sort: z
     .enum(["newest", "oldest", "name", "email", "subject", "status", "updated"])
     .optional(),
+  dir: z.enum(["asc", "desc"]).optional(),
   delivery: z.enum(["delivered", "failed", "all"]).optional(),
   from: z.preprocess(emptyToUndefined, z.coerce.date().optional()),
   to: z.preprocess(emptyToUndefined, z.coerce.date().optional()),

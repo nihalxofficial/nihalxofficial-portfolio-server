@@ -111,21 +111,22 @@ export async function createContactMessage(input: CreateContactInput, userAgent:
   return message;
 }
 
-/** Column key → mongoose sort. Alphabetical sorts ignore case. */
-const SORT_MAP: Record<string, Record<string, 1 | -1>> = {
-  newest: { createdAt: -1 },
-  oldest: { createdAt: 1 },
-  name: { name: 1 },
-  email: { email: 1 },
-  subject: { subject: 1 },
-  status: { status: 1 },
-  updated: { updatedAt: -1 },
+/** Column key → field + default direction, so the table can sort either way. */
+const SORT_MAP: Record<string, { field: string; dir: "asc" | "desc" }> = {
+  newest: { field: "createdAt", dir: "desc" },
+  oldest: { field: "createdAt", dir: "asc" },
+  name: { field: "name", dir: "asc" },
+  email: { field: "email", dir: "asc" },
+  subject: { field: "subject", dir: "asc" },
+  status: { field: "status", dir: "asc" },
+  updated: { field: "updatedAt", dir: "desc" },
 };
 
 export interface ListMessagesParams {
   status?: string;
   search?: string;
   sort?: string;
+  dir?: string;
   from?: Date;
   to?: Date;
   delivery?: string;
@@ -158,8 +159,12 @@ export async function listContactMessages(params: ListMessagesParams): Promise<{
     filter.$or = [{ name: term }, { email: term }, { subject: term }, { message: term }];
   }
 
-  const sort = SORT_MAP[params.sort ?? ""] ?? SORT_MAP.newest;
-  const alphabetical = params.sort === "name" || params.sort === "email" || params.sort === "subject";
+  const column = SORT_MAP[params.sort ?? ""] ?? SORT_MAP.newest;
+  const ascending = params.dir
+    ? params.dir === "asc"
+    : column.dir === "asc";
+  const sort: Record<string, 1 | -1> = { [column.field]: ascending ? 1 : -1 };
+  const alphabetical = ["name", "email", "subject"].includes(column.field);
 
   const query = ContactMessageModel.find(filter)
     // The list is a table: the browser agent is only shown in the detail view.
