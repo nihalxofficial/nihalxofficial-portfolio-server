@@ -27,8 +27,10 @@ export const chat = catchAsync(async (req: Request, res: Response) => {
 
   const send = (payload: unknown) => res.write(`data: ${JSON.stringify(payload)}\n\n`);
 
+  // Listen on the response, not the request: in Express 5 the request stream
+  // closes as soon as the body has been read, which would abort every stream.
   let aborted = false;
-  req.on("close", () => {
+  res.on("close", () => {
     aborted = true;
   });
 
@@ -39,17 +41,21 @@ export const chat = catchAsync(async (req: Request, res: Response) => {
       if (!aborted) send({ type: "delta", text });
     });
 
-    if (!aborted) {
-      send({ type: "done" });
-      res.end();
-    }
+    if (!aborted) send({ type: "done" });
   } catch (error) {
-    const message =
-      error instanceof ApiError ? error.message : "The assistant is unavailable right now.";
-    if (!aborted) {
-      send({ type: "error", message });
-      res.end();
-    }
+    // eslint-disable-next-line no-console
+    console.error("[ai] chat failed:", (error as Error)?.message ?? error);
+    const overloaded = /503|UNAVAILABLE|429|RESOURCE_EXHAUSTED|high demand/i.test(
+      (error as Error)?.message ?? "",
+    );
+    const message = error instanceof ApiError
+      ? error.message
+      : overloaded
+        ? "The assistant is briefly busy, please ask again in a moment."
+        : "The assistant is unavailable right now.";
+    if (!aborted) send({ type: "error", message });
+  } finally {
+    if (!res.writableEnded) res.end();
   }
 });
 

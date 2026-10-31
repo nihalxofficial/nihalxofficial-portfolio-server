@@ -21,3 +21,19 @@ export function getClient(): GoogleGenAI {
   if (!client) client = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
   return client;
 }
+
+/**
+ * Primary model first, then the configured fallbacks. Google regularly answers
+ * 503 for the newest flash model during demand spikes, and a model that is two
+ * weeks older answers just as well for this use case.
+ */
+export function getModelChain(): string[] {
+  const chain = [env.GEMINI_MODEL, ...env.GEMINI_FALLBACK_MODELS.split(",")];
+  const unique = chain.map((model) => model.trim()).filter(Boolean);
+  return [...new Set(unique)];
+}
+
+export const TRANSIENT_AI_ERROR = /503|UNAVAILABLE|429|RESOURCE_EXHAUSTED|overload|high demand/i;
+
+export const isTransientAiError = (error: unknown) =>
+  TRANSIENT_AI_ERROR.test((error as Error)?.message ?? "");

@@ -1,6 +1,6 @@
 import { env } from "../../config/env";
 import { ApiError } from "../../utils/apiError";
-import { getClient, isAssistantConfigured } from "./ai.client";
+import { getClient, getModelChain, isAssistantConfigured, isTransientAiError } from "./ai.client";
 import {
   AboutModel,
   CertificationModel,
@@ -140,6 +140,8 @@ function buildSystemPrompt(context: string): string {
   ].join("\n");
 }
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export async function streamAssistantReply(
   messages: ChatMessage[],
   onChunk: (text: string) => void,
@@ -150,25 +152,42 @@ export async function streamAssistantReply(
     parts: [{ text: message.content }],
   }));
 
-  const stream = await getClient().models.generateContentStream({
-    model: env.GEMINI_MODEL,
-    contents: content,
-    config: {
-      systemInstruction: buildSystemPrompt(context),
-      temperature: 0.55,
-      topP: 0.9,
-      maxOutputTokens: 900,
-    },
-  });
-
   let full = "";
-  for await (const chunk of stream) {
-    const text = chunk.text;
-    if (text) {
-      full += text;
-      onChunk(text);
+  let lastError: unknown;
+
+  // Walk the model chain: an overloaded primary is replaced by the next model,
+  // but only while nothing has been streamed yet, so the visitor never sees a
+  // half-written answer restart.
+  for (const [index, model] of getModelChain().entries()) {
+    try {
+      const stream = await getClient().models.generateContentStream({
+        model,
+        contents: content,
+        config: {
+          systemInstruction: buildSystemPrompt(context),
+          temperature: 0.55,
+          topP: 0.9,
+          maxOutputTokens: 900,
+        },
+      });
+
+      for await (const chunk of stream) {
+        const text = chunk.text;
+        if (text) {
+          full += text;
+          onChunk(text);
+        }
+      }
+
+      return full;
+    } catch (error) {
+      lastError = error;
+      if (full.length > 0 || !isTransientAiError(error)) throw error;
+      // eslint-disable-next-line no-console
+      console.warn(`[ai] ${model} unavailable, trying the next model`);
+      await sleep(400 * (index + 1));
     }
   }
 
-  return full;
+  throw lastError ?? ApiError.serviceUnavailable("No AI model is available right now");
 }

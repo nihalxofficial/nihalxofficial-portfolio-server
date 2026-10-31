@@ -8,6 +8,13 @@ dotenv.config();
  * The process refuses to boot with a broken configuration instead of failing
  * later, in the middle of a request.
  */
+/**
+ * An empty line in .env (`IMGBB_EXPIRATION=`) means "not configured".
+ * Without this, every blank value would be read as 0/false and fail validation.
+ */
+const blankToUndefined = (value: unknown) =>
+  typeof value === "string" && value.trim() === "" ? undefined : value;
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce.number().int().positive().default(5000),
@@ -25,24 +32,34 @@ const envSchema = z.object({
   GOOGLE_APPLICATION_CREDENTIALS: z.string().optional(),
 
   GEMINI_API_KEY: z.string().optional(),
-  GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
+  GEMINI_MODEL: z.string().default("gemini-3.6-flash"),
+  // Tried in order when the primary model is overloaded (comma separated).
+  GEMINI_FALLBACK_MODELS: z
+    .preprocess(blankToUndefined, z.string().optional())
+    .transform((value) => value ?? "gemini-3.8-flash,gemini-3.5-flash"),
 
   // Any SMTP provider: Gmail + app password, Brevo, Resend, Mailgun, Zoho...
-  SMTP_HOST: z.string().optional(),
-  SMTP_PORT: z.coerce.number().int().positive().default(587),
-  SMTP_SECURE: z
-    .enum(["true", "false"])
-    .default("false")
-    .transform((value) => value === "true"),
-  SMTP_USER: z.string().optional(),
-  SMTP_PASSWORD: z.string().optional(),
-  SMTP_FROM: z.string().optional(),
-  CONTACT_RECEIVER_EMAIL: z.string().optional(),
+  SMTP_HOST: z.preprocess(blankToUndefined, z.string().optional()),
+  SMTP_PORT: z.preprocess(blankToUndefined, z.coerce.number().int().positive().default(587)),
+  SMTP_SECURE: z.preprocess(
+    blankToUndefined,
+    z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((value) => value === "true"),
+  ),
+  SMTP_USER: z.preprocess(blankToUndefined, z.string().optional()),
+  SMTP_PASSWORD: z.preprocess(blankToUndefined, z.string().optional()),
+  SMTP_FROM: z.preprocess(blankToUndefined, z.string().optional()),
+  CONTACT_RECEIVER_EMAIL: z.preprocess(blankToUndefined, z.string().optional()),
 
   // Image hosting for the dashboard media library.
-  IMGBB_API_KEY: z.string().optional(),
+  IMGBB_API_KEY: z.preprocess(blankToUndefined, z.string().optional()),
   // Optional auto-expiry in seconds (60 .. 15552000). Empty means permanent.
-  IMGBB_EXPIRATION: z.coerce.number().int().min(60).max(15_552_000).optional(),
+  IMGBB_EXPIRATION: z.preprocess(
+    blankToUndefined,
+    z.coerce.number().int().min(60).max(15_552_000).optional(),
+  ),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { env } from "../../config/env";
 import { ApiError } from "../../utils/apiError";
-import { getClient, isAssistantConfigured } from "./ai.client";
+import { getClient, getModelChain, isAssistantConfigured, isTransientAiError } from "./ai.client";
 
 /**
  * Dashboard-side writing assistant.
@@ -375,61 +375,67 @@ export async function generateFormDraft(input: FormFillInput): Promise<FormFillR
 
   let lastError: unknown = null;
 
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    try {
-      const response = await getClient().models.generateContent({
-        model: env.GEMINI_MODEL,
-        contents: buildUserPrompt(input, spec),
-        config: {
-          systemInstruction: buildSystemPrompt(),
-          responseMimeType: "application/json",
-          temperature: attempt === 0 ? 0.7 : 0.3,
-          topP: 0.95,
-          maxOutputTokens: 2800,
-        },
-      });
+  // Same model chain as the public assistant: an overloaded primary model is
+  // replaced by the next one instead of failing the whole request.
+  for (const model of getModelChain()) {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const response = await getClient().models.generateContent({
+          model,
+          contents: buildUserPrompt(input, spec),
+          config: {
+            systemInstruction: buildSystemPrompt(),
+            responseMimeType: "application/json",
+            temperature: attempt === 0 ? 0.7 : 0.3,
+            topP: 0.95,
+            maxOutputTokens: 2800,
+          },
+        });
 
-      const text = response.text;
-      if (!text) throw ApiError.badGateway("The assistant returned an empty response. Try again.");
+        const text = response.text;
+        if (!text) throw ApiError.badGateway("The assistant returned an empty response. Try again.");
 
-      const parsed = schema.parse(extractJson(text)) as Record<string, unknown>;
+        const parsed = schema.parse(extractJson(text)) as Record<string, unknown>;
 
-      const fields: FormFillResult["fields"] = {};
-      for (const field of fieldSpecs) {
-        const value = parsed[field.name];
-        if (value === undefined || value === null) continue;
-        if (typeof value === "string") {
-          const trimmed = value.trim();
-          if (trimmed) fields[field.name] = trimmed;
-        } else if (Array.isArray(value)) {
-          const list = value.map((item) => String(item).trim()).filter(Boolean);
-          if (list.length) fields[field.name] = list;
-        } else if (typeof value === "number" || typeof value === "boolean") {
-          fields[field.name] = value;
+        const fields: FormFillResult["fields"] = {};
+        for (const field of fieldSpecs) {
+          const value = parsed[field.name];
+          if (value === undefined || value === null) continue;
+          if (typeof value === "string") {
+            const trimmed = value.trim();
+            if (trimmed) fields[field.name] = trimmed;
+          } else if (Array.isArray(value)) {
+            const list = value.map((item) => String(item).trim()).filter(Boolean);
+            if (list.length) fields[field.name] = list;
+          } else if (typeof value === "number" || typeof value === "boolean") {
+            fields[field.name] = value;
+          }
         }
+
+        // A missing slug blocks publishing, so derive it from the title.
+        if ("slug" in fields || fieldSpecs.some((field) => field.name === "slug")) {
+          const slug = typeof fields.slug === "string" ? fields.slug.trim() : "";
+          const fromTitle = slugify(String(fields.title ?? fields.name ?? ""));
+          const resolved = slug || fromTitle;
+          if (resolved) fields.slug = resolved;
+          else delete fields.slug;
+        }
+
+        const missingRequired = fieldSpecs
+          .filter((field) => field.required && fields[field.name] === undefined)
+          .map((field) => field.name);
+
+        return { entity: input.entity, fields, missingRequired, model };
+      } catch (error) {
+        lastError = error;
+        // An overloaded model is skipped, a malformed answer is retried once.
+        if (isTransientAiError(error)) break;
       }
-
-      // A missing slug blocks publishing, so derive it from the title.
-      if ("slug" in fields || fieldSpecs.some((field) => field.name === "slug")) {
-        const slug = typeof fields.slug === "string" ? slugify(fields.slug) : "";
-        const fromTitle = slugify(String(fields.title ?? fields.name ?? ""));
-        const resolved = slug || fromTitle;
-        if (resolved) fields.slug = resolved;
-        else delete fields.slug;
-      }
-
-      const missingRequired = fieldSpecs
-        .filter((field) => field.required && fields[field.name] === undefined)
-        .map((field) => field.name);
-
-      return { entity: input.entity, fields, missingRequired, model: env.GEMINI_MODEL };
-    } catch (error) {
-      lastError = error;
-      if (error instanceof ApiError) throw error;
     }
   }
 
   // eslint-disable-next-line no-console
   console.error("[ai] form fill failed:", (lastError as Error)?.message);
+  if (lastError instanceof ApiError) throw lastError;
   throw ApiError.badGateway("The writing assistant could not fill this form. Try again.");
 }
