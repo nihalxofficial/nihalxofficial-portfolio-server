@@ -10,6 +10,7 @@
 import mongoose from "mongoose";
 import { connectDatabase, disconnectDatabase } from "../config/db";
 import {
+  AboutModel,
   HeroModel,
   NavigationModel,
   SectionModel,
@@ -48,6 +49,17 @@ const STATS_GOALS = [
 
 /** Destinations worth a thumb-sized target in the mobile bottom dock. */
 const DOCK_HREFS = ["#hero", "#projects", "#contact"];
+
+/** Headings the About block shipped with, before the redesign renamed it. */
+const ABOUT_LEGACY_HEADINGS = ["", "A little about me"];
+
+/**
+ * Section headings the redesign expects, applied only while the document still
+ * carries the previous default — an admin's own wording is never overwritten.
+ */
+const SECTION_HEADINGS: Array<{ key: string; heading: string; was: string[] }> = [
+  { key: "about", heading: "Who Am I?", was: ABOUT_LEGACY_HEADINGS },
+];
 
 function targetOf(href: string): string {
   const raw = String(href ?? "").replace(/^#/, "").split("/")[0];
@@ -111,6 +123,22 @@ async function backfill() {
     { $set: { items: STATS_GOALS } },
   );
 
+  // ── Section headings: rename the defaults the design replaced ──────────────
+  let headings = 0;
+  for (const entry of SECTION_HEADINGS) {
+    const result = await SectionModel.updateMany(
+      { key: entry.key, heading: { $in: entry.was } },
+      { $set: { heading: entry.heading } },
+    );
+    headings += result.modifiedCount;
+  }
+
+  // The About document carries the same heading as a fallback for the section.
+  const aboutDoc = await AboutModel.updateMany(
+    { heading: { $in: ABOUT_LEGACY_HEADINGS } },
+    { $set: { heading: "Who Am I?" } },
+  );
+
   // eslint-disable-next-line no-console
   console.log("[backfill:design] documents updated:", {
     navigationIcons: icons,
@@ -120,6 +148,8 @@ async function backfill() {
     typography: fonts.modifiedCount,
     mapZoom: zoom.modifiedCount,
     statsItems: items.modifiedCount,
+    sectionHeadings: headings,
+    aboutHeading: aboutDoc.modifiedCount,
   });
 
   await disconnectDatabase();

@@ -372,7 +372,7 @@ async function seed() {
   await AboutModel.create({
     key: "main",
     label: "About Me",
-    heading: "A little about me",
+    heading: "Who Am I?",
     paragraphs: [
       "I'm a Diploma student and a passionate web developer with experience in modern technologies. I enjoy solving problems, creating useful digital products, and constantly improving my skills.",
       "Currently, I'm working as a Frontend Developer Intern at bdsoft.org, and I'm always open to new opportunities, challenges and collaborations.",
@@ -500,7 +500,7 @@ async function seed() {
 
   await SectionModel.insertMany([
     { key: "hero", label: "Home", heading: "Hero", order: 1, isVisible: true },
-    { key: "about", label: "About Me", heading: "A little about me", order: 2, isVisible: true },
+    { key: "about", label: "About Me", heading: "Who Am I?", order: 2, isVisible: true },
     { key: "stats", label: "Numbers Speak", heading: "Numbers Speak", items: ["Get a full-time remote job", "Master DSA & System Design", "Contribute to open source", "Build something meaningful"], order: 3, isVisible: true },
     { key: "skills", label: "Skills & Tools", heading: "Skills & Technologies", order: 4, isVisible: true },
     { key: "projects", label: "Projects", heading: "Featured Projects", order: 5, isVisible: true },
