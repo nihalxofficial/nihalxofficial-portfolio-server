@@ -154,6 +154,16 @@ const siteSettingsSchema = new Schema(
     metaDescription: { type: String, default: "" },
     keywords: { type: [String], default: [] },
     ogImageUrl: { type: String, default: "" },
+    // Theme aware brand assets. Empty values fall back to the generated
+    // gradient mark on the site, so a fresh install still looks complete.
+    branding: {
+      navLogoLight: { type: String, default: "" },
+      navLogoDark: { type: String, default: "" },
+      footerLogoLight: { type: String, default: "" },
+      footerLogoDark: { type: String, default: "" },
+      faviconUrl: { type: String, default: "" },
+      logoAlt: { type: String, default: "" },
+    },
     contact: {
       email: String,
       phone: String,

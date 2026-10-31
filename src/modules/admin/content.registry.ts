@@ -381,6 +381,18 @@ const ENTITIES: EntityDef[] = [
       { name: "keywords", kind: "list" },
       { name: "ogImageUrl", kind: "url" },
       {
+        name: "branding",
+        kind: "object",
+        children: [
+          { name: "navLogoLight", kind: "url" },
+          { name: "navLogoDark", kind: "url" },
+          { name: "footerLogoLight", kind: "url" },
+          { name: "footerLogoDark", kind: "url" },
+          { name: "faviconUrl", kind: "url" },
+          { name: "logoAlt", kind: "string", max: 120 },
+        ],
+      },
+      {
         name: "contact",
         kind: "object",
         children: [

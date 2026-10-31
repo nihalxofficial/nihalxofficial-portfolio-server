@@ -311,6 +311,22 @@ async function seed() {
   // eslint-disable-next-line no-console
   console.log("[seed] connected");
 
+  // The dashboard owns this data now, so the seed refuses to overwrite it
+  // unless the operator explicitly asks for a reset.
+  const reset = process.argv.includes("--reset");
+  if (!reset) {
+    const existing = await SiteSettingsModel.countDocuments();
+    if (existing > 0) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[seed] content already exists — nothing was deleted.\n" +
+          "       Re-run with `npm run seed -- --reset` to replace it.",
+      );
+      await mongoose.connection.close();
+      return;
+    }
+  }
+
   await Promise.all([
     HeroModel.deleteMany({}),
     AboutModel.deleteMany({}),
@@ -509,6 +525,14 @@ async function seed() {
       "MongoDB",
     ],
     ogImageUrl: "/og-image.jpg",
+    branding: {
+      navLogoLight: "",
+      navLogoDark: "",
+      footerLogoLight: "",
+      footerLogoDark: "",
+      faviconUrl: "/favicon.png",
+      logoAlt: "Md. Nihal Uddin Bijoy",
+    },
     contact: {
       email: "nihaluddinbijoy@gmail.com",
       location: "Mirsarai, Chattogram, Bangladesh",
