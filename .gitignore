@@ -5,3 +5,7 @@ dist
 !.env.example
 *.log
 coverage
+
+# throwaway verification scripts and commit messages
+tmp-*.mjs
+tmp-commit-msg.txt
