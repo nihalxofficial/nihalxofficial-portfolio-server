@@ -126,6 +126,9 @@ const navigationSchema = new Schema(
     href: { type: String, required: true },
     // Icon name (lucide) shown before the label in the header pill.
     icon: { type: String, default: "" },
+    // Pinned to the mobile bottom dock. Everything else folds into "More",
+    // so the owner decides which sections deserve a thumb-sized target.
+    isPrimary: { type: Boolean, default: false },
     ...orderedFields,
   },
   baseOptions,

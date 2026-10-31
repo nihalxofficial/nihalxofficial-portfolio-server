@@ -487,14 +487,15 @@ async function seed() {
   ]);
 
   await NavigationModel.insertMany([
-    { label: "Home", href: "#hero", icon: "Home", order: 1 },
+    // isPrimary = pinned to the mobile bottom dock; the rest live in "More".
+    { label: "Home", href: "#hero", icon: "Home", order: 1, isPrimary: true },
     { label: "About", href: "#about", icon: "User", order: 2 },
     { label: "Skills", href: "#skills", icon: "Wrench", order: 3 },
-    { label: "Projects", href: "#projects", icon: "FolderKanban", order: 4 },
+    { label: "Projects", href: "#projects", icon: "FolderKanban", order: 4, isPrimary: true },
     { label: "Experience", href: "#journey", icon: "Briefcase", order: 5 },
     { label: "Education", href: "#education", icon: "GraduationCap", order: 6 },
     { label: "Blog", href: "#blog", icon: "Newspaper", order: 7 },
-    { label: "Contact", href: "#contact", icon: "Mail", order: 8 },
+    { label: "Contact", href: "#contact", icon: "Mail", order: 8, isPrimary: true },
   ]);
 
   await SectionModel.insertMany([

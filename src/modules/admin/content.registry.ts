@@ -274,6 +274,8 @@ const ENTITIES: EntityDef[] = [
       { name: "href", kind: "string", required: true, max: 200 },
       // Lucide icon name rendered before the label in the header pill.
       { name: "icon", kind: "string", max: 40 },
+      // Shown in the mobile bottom dock; the rest collapse into "More".
+      { name: "isPrimary", kind: "boolean" },
       ...ordered,
     ],
   },

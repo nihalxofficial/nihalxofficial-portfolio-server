@@ -46,6 +46,9 @@ const STATS_GOALS = [
   "Build something meaningful",
 ];
 
+/** Destinations worth a thumb-sized target in the mobile bottom dock. */
+const DOCK_HREFS = ["#hero", "#projects", "#contact"];
+
 function targetOf(href: string): string {
   const raw = String(href ?? "").replace(/^#/, "").split("/")[0];
   return raw || "hero";
@@ -67,6 +70,18 @@ async function backfill() {
     await item.save();
     icons += 1;
   }
+
+  // ── Mobile dock: flag the primary destinations only if nothing is flagged ──
+  const flagged = await NavigationModel.countDocuments({ isPrimary: true });
+  const dock =
+    flagged > 0
+      ? 0
+      : (
+          await NavigationModel.updateMany(
+            { href: { $in: DOCK_HREFS } },
+            { $set: { isPrimary: true } },
+          )
+        ).modifiedCount;
 
   // ── Hero tagline (handwritten note beside the portrait) ────────────────────
   const tagline = await HeroModel.updateMany(
@@ -99,6 +114,7 @@ async function backfill() {
   // eslint-disable-next-line no-console
   console.log("[backfill:design] documents updated:", {
     navigationIcons: icons,
+    dockPrimary: dock,
     heroTagline: tagline.modifiedCount,
     wordmark: wordmark.modifiedCount,
     typography: fonts.modifiedCount,
