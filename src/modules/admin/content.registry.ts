@@ -272,6 +272,8 @@ const ENTITIES: EntityDef[] = [
     fields: [
       { name: "label", kind: "string", required: true, max: 40 },
       { name: "href", kind: "string", required: true, max: 200 },
+      // Lucide icon name rendered before the label in the header pill.
+      { name: "icon", kind: "string", max: 40 },
       ...ordered,
     ],
   },
@@ -287,6 +289,8 @@ const ENTITIES: EntityDef[] = [
       { name: "label", kind: "string", max: 80 },
       { name: "heading", kind: "string", max: 160 },
       { name: "description", kind: "text" },
+      // Free-form lines some sections render as a list (e.g. the goals card).
+      { name: "items", kind: "list" },
       { name: "order", kind: "number" },
       { name: "isVisible", kind: "boolean" },
     ],
@@ -324,6 +328,7 @@ const ENTITIES: EntityDef[] = [
         ],
       },
       { name: "portraitUrl", kind: "url" },
+      { name: "tagline", kind: "string", max: 80 },
       ...ordered,
     ],
   },
@@ -390,6 +395,17 @@ const ENTITIES: EntityDef[] = [
           { name: "footerLogoDark", kind: "url" },
           { name: "faviconUrl", kind: "url" },
           { name: "logoAlt", kind: "string", max: 120 },
+          { name: "wordmark", kind: "string", max: 40 },
+        ],
+      },
+      {
+        // Keys from portfolio/lib/fonts.ts; empty means "use the built-in default".
+        name: "typography",
+        kind: "object",
+        children: [
+          { name: "sans", kind: "string", max: 40 },
+          { name: "display", kind: "string", max: 40 },
+          { name: "mono", kind: "string", max: 40 },
         ],
       },
       {

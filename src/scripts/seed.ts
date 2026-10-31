@@ -365,6 +365,7 @@ async function seed() {
       ],
     },
     portraitUrl: "/portfolio/bijoy.png",
+    tagline: "Better Code, Better Tomorrow",
     order: 1,
   });
 
@@ -486,17 +487,20 @@ async function seed() {
   ]);
 
   await NavigationModel.insertMany([
-    { label: "About", href: "#about", order: 1 },
-    { label: "Skills", href: "#skills", order: 2 },
-    { label: "Projects", href: "#projects", order: 3 },
-    { label: "Journey", href: "#journey", order: 4 },
-    { label: "Contact", href: "#contact", order: 5 },
+    { label: "Home", href: "#hero", icon: "Home", order: 1 },
+    { label: "About", href: "#about", icon: "User", order: 2 },
+    { label: "Skills", href: "#skills", icon: "Wrench", order: 3 },
+    { label: "Projects", href: "#projects", icon: "FolderKanban", order: 4 },
+    { label: "Experience", href: "#journey", icon: "Briefcase", order: 5 },
+    { label: "Education", href: "#education", icon: "GraduationCap", order: 6 },
+    { label: "Blog", href: "#blog", icon: "Newspaper", order: 7 },
+    { label: "Contact", href: "#contact", icon: "Mail", order: 8 },
   ]);
 
   await SectionModel.insertMany([
     { key: "hero", label: "Home", heading: "Hero", order: 1, isVisible: true },
     { key: "about", label: "About Me", heading: "A little about me", order: 2, isVisible: true },
-    { key: "stats", label: "Numbers Speak", heading: "Numbers Speak", order: 3, isVisible: true },
+    { key: "stats", label: "Numbers Speak", heading: "Numbers Speak", items: ["Get a full-time remote job", "Master DSA & System Design", "Contribute to open source", "Build something meaningful"], order: 3, isVisible: true },
     { key: "skills", label: "Skills & Tools", heading: "Skills & Technologies", order: 4, isVisible: true },
     { key: "projects", label: "Projects", heading: "Featured Projects", order: 5, isVisible: true },
     { key: "showcase", label: "Showcase", heading: "Project Showcase", order: 6, isVisible: true },
@@ -532,6 +536,12 @@ async function seed() {
       footerLogoDark: "",
       faviconUrl: "/favicon.png",
       logoAlt: "Md. Nihal Uddin Bijoy",
+      wordmark: "nihalxofficial",
+    },
+    typography: {
+      sans: "outfit",
+      display: "space-grotesk",
+      mono: "jetbrains-mono",
     },
     contact: {
       email: "nihaluddinbijoy@gmail.com",

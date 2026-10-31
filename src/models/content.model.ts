@@ -37,6 +37,8 @@ const heroSchema = new Schema(
       lines: { type: [String], default: [] },
     },
     portraitUrl: { type: String, default: "" },
+    // Short handwritten-style note floating beside the portrait.
+    tagline: { type: String, default: "" },
     ...orderedFields,
   },
   baseOptions,
@@ -122,6 +124,8 @@ const navigationSchema = new Schema(
   {
     label: { type: String, required: true },
     href: { type: String, required: true },
+    // Icon name (lucide) shown before the label in the header pill.
+    icon: { type: String, default: "" },
     ...orderedFields,
   },
   baseOptions,
@@ -136,6 +140,8 @@ const sectionSchema = new Schema(
     label: { type: String, default: "" },
     heading: { type: String, default: "" },
     description: { type: String, default: "" },
+    // Optional extra copy for a section, e.g. the goals list beside the stats.
+    items: { type: [String], default: [] },
     order: { type: Number, default: 0 },
     isVisible: { type: Boolean, default: true },
   },
@@ -163,6 +169,14 @@ const siteSettingsSchema = new Schema(
       footerLogoDark: { type: String, default: "" },
       faviconUrl: { type: String, default: "" },
       logoAlt: { type: String, default: "" },
+      // Short handle shown beside the mark, e.g. "nihalxofficial".
+      wordmark: { type: String, default: "" },
+    },
+    // Google Font keys resolved by the web app (see portfolio/lib/fonts.ts).
+    typography: {
+      sans: { type: String, default: "" },
+      display: { type: String, default: "" },
+      mono: { type: String, default: "" },
     },
     contact: {
       email: String,
