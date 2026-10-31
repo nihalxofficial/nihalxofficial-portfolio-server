@@ -1,12 +1,14 @@
+import mongoose from "mongoose";
 import nodemailer from "nodemailer";
 import { env } from "../../config/env";
-import { ContactMessageModel } from "../../models";
+import { ContactMessageModel, SiteSettingsModel } from "../../models";
 import { ApiError } from "../../utils/apiError";
 import {
   buildPaginationMeta,
   type PaginationMeta,
 } from "../../utils/sendResponse";
-import type { CreateContactInput } from "./contact.validator";
+import { newMessageEmail, replyEmail } from "./email.template";
+import type { ContactReplyInput, CreateContactInput } from "./contact.validator";
 
 let transporter: nodemailer.Transporter | null = null;
 
@@ -44,12 +46,18 @@ export async function verifySmtp(): Promise<boolean> {
   }
 }
 
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+function assertObjectId(id: string) {
+  if (!mongoose.isValidObjectId(id)) throw ApiError.badRequest("Invalid message id");
+}
+
+/** Brand copy used in the transactional emails — always read from settings. */
+async function emailBrand() {
+  const settings = await SiteSettingsModel.findOne().lean();
+  return {
+    brand: settings?.branding?.wordmark || settings?.siteName || "portfolio",
+    siteName: settings?.siteName || "",
+    siteUrl: settings?.siteUrl || "",
+  };
 }
 
 /**
@@ -68,26 +76,29 @@ export async function createContactMessage(input: CreateContactInput, userAgent:
 
   const mailer = getTransporter();
   if (mailer && env.contactReceiver) {
+    const brand = await emailBrand();
+    const mail = newMessageEmail({
+      name: input.name,
+      email: input.email,
+      subject: input.subject || "Portfolio inquiry",
+      message: input.message,
+      location: input.location,
+      receivedAt: message.createdAt?.toLocaleString("en-GB", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }),
+      dashboardUrl: brand.siteUrl ? `${brand.siteUrl.replace(/\/$/, "")}/control-centre/messages` : "",
+      brand: brand.brand,
+    });
+
     try {
       await mailer.sendMail({
         from: `"Portfolio Contact" <${env.emailFrom}>`,
         to: env.contactReceiver,
         replyTo: input.email,
-        subject: `${input.name} — ${input.subject || "Portfolio inquiry"}`,
-        html: `
-          <div style="font-family:Inter,Arial,sans-serif;background:#050b16;padding:32px;color:#dbeafe">
-            <h2 style="margin:0 0 8px;color:#22d3ee">New portfolio message</h2>
-            <p style="margin:0 0 20px;color:#93a7c0">${escapeHtml(input.location || "Location unknown")}</p>
-            <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
-              <tr><td style="padding:6px 0;color:#93a7c0">Name</td><td style="color:#e8f3ff">${escapeHtml(input.name)}</td></tr>
-              <tr><td style="padding:6px 0;color:#93a7c0">Email</td><td style="color:#22d3ee">${escapeHtml(input.email)}</td></tr>
-              <tr><td style="padding:6px 0;color:#93a7c0">Subject</td><td style="color:#e8f3ff">${escapeHtml(input.subject || "—")}</td></tr>
-            </table>
-            <div style="background:#0b1a2c;border-left:3px solid #22d3ee;border-radius:8px;padding:18px">
-              <p style="margin:0;white-space:pre-wrap;line-height:1.7">${escapeHtml(input.message)}</p>
-            </div>
-          </div>
-        `,
+        subject: mail.subject,
+        text: mail.text,
+        html: mail.html,
       });
       message.emailDelivered = true;
       await message.save();
@@ -100,24 +111,67 @@ export async function createContactMessage(input: CreateContactInput, userAgent:
   return message;
 }
 
-export async function listContactMessages(params: {
+/** Column key → mongoose sort. Alphabetical sorts ignore case. */
+const SORT_MAP: Record<string, Record<string, 1 | -1>> = {
+  newest: { createdAt: -1 },
+  oldest: { createdAt: 1 },
+  name: { name: 1 },
+  email: { email: 1 },
+  subject: { subject: 1 },
+  status: { status: 1 },
+  updated: { updatedAt: -1 },
+};
+
+export interface ListMessagesParams {
   status?: string;
   search?: string;
+  sort?: string;
+  from?: Date;
+  to?: Date;
+  delivery?: string;
   page: number;
   limit: number;
   skip: number;
-}): Promise<{ items: unknown[]; meta: PaginationMeta; unreadCount: number }> {
+}
+
+export async function listContactMessages(params: ListMessagesParams): Promise<{
+  items: unknown[];
+  meta: PaginationMeta;
+  unreadCount: number;
+}> {
   const filter: Record<string, unknown> = {};
 
   if (params.status && params.status !== "all") filter.status = params.status;
+
+  if (params.delivery === "failed") filter.emailDelivered = false;
+  if (params.delivery === "delivered") filter.emailDelivered = true;
+
+  if (params.from || params.to) {
+    const range: Record<string, Date> = {};
+    if (params.from) range.$gte = params.from;
+    if (params.to) range.$lte = params.to;
+    filter.createdAt = range;
+  }
 
   if (params.search) {
     const term = new RegExp(params.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
     filter.$or = [{ name: term }, { email: term }, { subject: term }, { message: term }];
   }
 
+  const sort = SORT_MAP[params.sort ?? ""] ?? SORT_MAP.newest;
+  const alphabetical = params.sort === "name" || params.sort === "email" || params.sort === "subject";
+
+  const query = ContactMessageModel.find(filter)
+    // The list is a table: the browser agent is only shown in the detail view.
+    .select("-userAgent")
+    .sort(sort)
+    .skip(params.skip)
+    .limit(params.limit);
+
+  if (alphabetical) query.collation({ locale: "en", strength: 2 });
+
   const [items, total, unreadCount] = await Promise.all([
-    ContactMessageModel.find(filter).sort({ createdAt: -1 }).skip(params.skip).limit(params.limit).lean(),
+    query.lean(),
     ContactMessageModel.countDocuments(filter),
     ContactMessageModel.countDocuments({ status: "unread" }),
   ]);
@@ -129,7 +183,24 @@ export async function listContactMessages(params: {
   };
 }
 
+/** Opening a message from the table also clears its unread badge. */
+export async function getContactMessage(id: string) {
+  assertObjectId(id);
+
+  const current = await ContactMessageModel.findById(id).lean();
+  if (!current) throw ApiError.notFound("Message not found");
+
+  if (current.status !== "unread") return current;
+
+  return (
+    (await ContactMessageModel.findByIdAndUpdate(id, { status: "read" }, { new: true }).lean()) ??
+    current
+  );
+}
+
 export async function updateContactStatus(id: string, status: string) {
+  assertObjectId(id);
+
   const updated = await ContactMessageModel.findByIdAndUpdate(
     id,
     { status },
@@ -141,7 +212,71 @@ export async function updateContactStatus(id: string, status: string) {
 }
 
 export async function deleteContactMessage(id: string) {
+  assertObjectId(id);
+
   const deleted = await ContactMessageModel.findByIdAndDelete(id).lean();
   if (!deleted) throw ApiError.notFound("Message not found");
   return deleted;
 }
+
+/**
+ * Answers a visitor from the dashboard inbox.
+ *
+ * The reply is only stored once the provider accepted it, so a failed send
+ * leaves the message untouched and the admin can retry.
+ */
+export async function replyToContactMessage(id: string, input: ContactReplyInput) {
+  assertObjectId(id);
+
+  const mailer = getTransporter();
+  if (!mailer) {
+    throw ApiError.serviceUnavailable(
+      "Email delivery is not configured — set SMTP_HOST, SMTP_USER and SMTP_PASSWORD on the server first.",
+    );
+  }
+
+  const message = await ContactMessageModel.findById(id);
+  if (!message) throw ApiError.notFound("Message not found");
+
+  const brand = await emailBrand();
+  const mail = replyEmail({
+    to: input.to,
+    name: message.name,
+    subject: input.subject,
+    body: input.body,
+    originalMessage: message.message,
+    siteName: brand.siteName,
+    siteUrl: brand.siteUrl,
+    brand: brand.brand,
+  });
+
+  const cc = input.ccOwner && env.contactReceiver && env.contactReceiver !== input.to
+    ? env.contactReceiver
+    : undefined;
+
+  try {
+    await mailer.sendMail({
+      from: `"${brand.siteName || "Portfolio"}" <${env.emailFrom}>`,
+      to: input.to,
+      ...(cc ? { cc } : {}),
+      replyTo: env.contactReceiver || env.emailFrom,
+      subject: mail.subject,
+      text: mail.text,
+      html: mail.html,
+    });
+  } catch (error) {
+    throw ApiError.badGateway(`The mail provider rejected this reply: ${(error as Error).message}`);
+  }
+
+  message.replies.push({
+    to: input.to,
+    subject: input.subject,
+    body: input.body,
+    delivered: true,
+  });
+  message.status = "replied";
+  await message.save();
+
+  return message.toObject();
+}
+

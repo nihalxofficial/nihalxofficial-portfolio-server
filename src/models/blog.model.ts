@@ -42,11 +42,23 @@ const contactMessageSchema = new Schema(
     location: { type: String, default: "" },
     userAgent: { type: String, default: "" },
     emailDelivered: { type: Boolean, default: false },
+    // Replies sent from the dashboard inbox. The visitor's message is never
+    // edited — the thread only ever grows.
+    replies: [
+      {
+        to: { type: String, default: "" },
+        subject: { type: String, default: "" },
+        body: { type: String, default: "" },
+        delivered: { type: Boolean, default: false },
+        sentAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true, versionKey: false },
 );
 
 contactMessageSchema.index({ createdAt: -1 });
+contactMessageSchema.index({ status: 1, createdAt: -1 });
 
 export type ContactMessage = InferSchemaType<typeof contactMessageSchema>;
 export const ContactMessageModel = model("ContactMessage", contactMessageSchema);

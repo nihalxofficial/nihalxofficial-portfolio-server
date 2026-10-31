@@ -3,9 +3,12 @@ import { sendResponse } from "../../utils/sendResponse";
 import {
   createContactMessage,
   deleteContactMessage,
+  getContactMessage,
   listContactMessages,
+  replyToContactMessage,
   updateContactStatus,
 } from "./contact.service";
+import type { ContactListQuery } from "./contact.validator";
 
 export const submitContact = catchAsync(async (req, res) => {
   const message = await createContactMessage(req.body, req.headers["user-agent"] ?? "");
@@ -17,12 +20,17 @@ export const submitContact = catchAsync(async (req, res) => {
 });
 
 export const getMessages = catchAsync(async (req, res) => {
-  const page = Number(req.query.page) || 1;
-  const limit = Math.min(100, Number(req.query.limit) || 20);
+  const query = req.query as unknown as ContactListQuery;
+  const page = query.page ?? 1;
+  const limit = Math.min(100, query.limit ?? 20);
 
   const { items, meta, unreadCount } = await listContactMessages({
-    status: req.query.status as string | undefined,
-    search: req.query.search as string | undefined,
+    status: query.status,
+    search: query.search,
+    sort: query.sort,
+    delivery: query.delivery,
+    from: query.from,
+    to: query.to,
     page,
     limit,
     skip: (page - 1) * limit,
@@ -33,7 +41,25 @@ export const getMessages = catchAsync(async (req, res) => {
   return sendResponse(res, 200, {
     message: "Messages retrieved",
     data: items,
-    meta,
+    meta: { ...meta, unreadCount },
+  });
+});
+
+export const getMessage = catchAsync(async (req, res) => {
+  const message = await getContactMessage(String(req.params.id));
+
+  return sendResponse(res, 200, { message: "Message retrieved", data: message });
+});
+
+export const replyToMessage = catchAsync(async (req, res) => {
+  const message = await replyToContactMessage(String(req.params.id), {
+    ...req.body,
+    ccOwner: req.body.ccOwner !== false,
+  });
+
+  return sendResponse(res, 200, {
+    message: "Reply sent",
+    data: { replies: message.replies, status: message.status },
   });
 });
 

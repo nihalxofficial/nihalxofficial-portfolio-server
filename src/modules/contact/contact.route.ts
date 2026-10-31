@@ -3,14 +3,17 @@ import { requireAdmin } from "../../middlewares/auth";
 import { validate } from "../../middlewares/validate";
 import { contactLimiter } from "../../middlewares/rateLimit";
 import {
+  getMessage,
   getMessages,
   patchMessageStatus,
   removeMessage,
+  replyToMessage,
   submitContact,
 } from "./contact.controller";
 import {
   contactQuerySchema,
   createContactSchema,
+  replyContactSchema,
   updateContactSchema,
 } from "./contact.validator";
 
@@ -22,5 +25,11 @@ contactPublicRouter.post("/", contactLimiter, validate({ body: createContactSche
 export const contactAdminRouter = Router();
 contactAdminRouter.use(requireAdmin);
 contactAdminRouter.get("/", validate({ query: contactQuerySchema }), getMessages);
+contactAdminRouter.get("/:id", getMessage);
+contactAdminRouter.post(
+  "/:id/reply",
+  validate({ body: replyContactSchema }),
+  replyToMessage,
+);
 contactAdminRouter.patch("/:id", validate({ body: updateContactSchema }), patchMessageStatus);
 contactAdminRouter.delete("/:id", removeMessage);

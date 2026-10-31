@@ -5,6 +5,8 @@ export interface PaginationMeta {
   limit: number;
   total: number;
   totalPages: number;
+  /** Inbox only: how many messages are still unread, across every filter. */
+  unreadCount?: number;
 }
 
 export interface ApiResponse<T> {

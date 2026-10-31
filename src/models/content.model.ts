@@ -183,6 +183,12 @@ const siteSettingsSchema = new Schema(
       phone: String,
       location: String,
       availability: String,
+      // Contact-section map. Coordinates are optional: without them the map
+      // geocodes the `location` text. `mapEmbedUrl` overrides both.
+      mapLat: { type: Number, min: -90, max: 90 },
+      mapLng: { type: Number, min: -180, max: 180 },
+      mapZoom: { type: Number, min: 1, max: 20, default: 14 },
+      mapEmbedUrl: { type: String, default: "" },
     },
     socialLinks: [
       {

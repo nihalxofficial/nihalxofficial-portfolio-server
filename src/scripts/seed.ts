@@ -547,6 +547,11 @@ async function seed() {
       email: "nihaluddinbijoy@gmail.com",
       location: "Mirsarai, Chattogram, Bangladesh",
       availability: "Open to offers / Ready to interview",
+      // Empty coordinates make the contact map geocode the location text.
+      mapLat: undefined,
+      mapLng: undefined,
+      mapZoom: 12,
+      mapEmbedUrl: "",
     },
     socialLinks: [
       { platform: "GitHub", url: "https://github.com/nihalxofficial", icon: "Github" },

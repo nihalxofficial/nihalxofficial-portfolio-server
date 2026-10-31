@@ -416,6 +416,10 @@ const ENTITIES: EntityDef[] = [
           { name: "phone", kind: "string" },
           { name: "location", kind: "string" },
           { name: "availability", kind: "string" },
+          { name: "mapLat", kind: "number" },
+          { name: "mapLng", kind: "number" },
+          { name: "mapZoom", kind: "number" },
+          { name: "mapEmbedUrl", kind: "url" },
         ],
       },
       {
@@ -463,7 +467,11 @@ function buildFieldSchema(field: FieldDef): z.ZodTypeAny {
     case "boolean":
       return z.boolean();
     case "number":
-      return z.coerce.number().min(-99999).max(99999);
+      // A cleared numeric input removes the value instead of failing coercion.
+      return z.preprocess(
+        (value) => (value === "" || value === null ? undefined : value),
+        z.coerce.number().min(-99999).max(99999).optional(),
+      );
     case "enum":
       return z.enum(field.options as unknown as [string, ...string[]]);
     case "date":
