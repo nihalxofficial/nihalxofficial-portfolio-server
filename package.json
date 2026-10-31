@@ -10,6 +10,7 @@
     "start": "node dist/index.js",
     "seed": "tsx src/scripts/seed.ts",
     "backfill:design": "tsx src/scripts/backfill-design.ts",
+    "backfill:content": "tsx src/scripts/backfill-content.ts",
     "typecheck": "tsc --noEmit"
   },
   "engines": {

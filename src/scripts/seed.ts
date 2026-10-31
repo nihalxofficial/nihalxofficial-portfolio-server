@@ -397,10 +397,8 @@ async function seed() {
 
   await StatisticModel.insertMany([
     { value: "5+", label: "Projects Completed", description: "Shipped end to end", icon: "FolderCode", order: 1 },
-    { value: "2+", label: "Technologies Mastered", description: "Deep daily use", icon: "Code2", order: 2 },
-    { value: "100+", label: "Hours of Learning", description: "Structured practice", icon: "Zap", order: 3 },
-    { value: "1", label: "Internship", description: "Industry experience", icon: "Briefcase", order: 4 },
-    { value: "∞", label: "Learning Never Stops", description: "Still a work in progress", icon: "Infinity", order: 5 },
+    { value: "100+", label: "Hours of Learning", description: "Structured practice", icon: "Zap", order: 2 },
+    { value: "∞", label: "Learning Never Stops", description: "Still a work in progress", icon: "Infinity", order: 3 },
   ]);
 
   await SkillModel.insertMany(skills);
@@ -423,17 +421,17 @@ async function seed() {
       order: 1,
     },
     {
-      organization: "Itransition",
-      role: "Intern Development Training",
-      employmentType: "Training",
-      location: "Online",
-      startDate: "Aug 7, 2026",
-      endDate: "Oct 7, 2026",
+      organization: "Feni Polytechnic Institute",
+      role: "Mentor · FPI Computer Club",
+      employmentType: "Mentorship",
+      location: "Feni, Bangladesh",
+      startDate: "Jan 2026",
+      endDate: "Jun 2026",
       isCurrent: false,
       status: "completed",
       description:
-        "Structured development training covering engineering practices, code review discipline and real task workflows.",
-      technologies: ["JavaScript", "Git", "Software Engineering"],
+        "Mentored fellow students through their first web projects, reviewing code and running hands-on sessions for the club.",
+      technologies: ["HTML", "CSS", "JavaScript", "Git"],
       order: 2,
     },
   ]);
