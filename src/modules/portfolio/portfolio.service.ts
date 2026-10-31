@@ -99,3 +99,28 @@ export async function getFeaturedProjects(limit = 4) {
     .limit(limit)
     .lean();
 }
+
+/** Detail page for one project plus a short "keep reading" list. */
+export async function getProjectBySlug(slug: string) {
+  const project = await ProjectModel.findOne({ slug, isPublished: true }).lean();
+  if (!project) return null;
+
+  const related = await ProjectModel.find({ isPublished: true, slug: { $ne: slug } })
+    .sort({ order: 1, createdAt: -1 })
+    .limit(3)
+    .lean();
+
+  return { project, related };
+}
+
+export async function getPostBySlug(slug: string) {
+  const post = await BlogPostModel.findOne({ slug, isPublished: true }).lean();
+  if (!post) return null;
+
+  const related = await BlogPostModel.find({ isPublished: true, slug: { $ne: slug } })
+    .sort({ publishedAt: -1 })
+    .limit(3)
+    .lean();
+
+  return { post, related };
+}
