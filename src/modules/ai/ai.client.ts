@@ -33,7 +33,8 @@ export function getModelChain(): string[] {
   return [...new Set(unique)];
 }
 
-export const TRANSIENT_AI_ERROR = /503|UNAVAILABLE|429|RESOURCE_EXHAUSTED|overload|high demand/i;
+export const TRANSIENT_AI_ERROR =
+  /503|UNAVAILABLE|429|RESOURCE_EXHAUSTED|overload|high demand|404|NOT_FOUND|not found/i;
 
 export const isTransientAiError = (error: unknown) =>
   TRANSIENT_AI_ERROR.test((error as Error)?.message ?? "");

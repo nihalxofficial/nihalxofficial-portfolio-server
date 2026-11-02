@@ -32,11 +32,11 @@ const envSchema = z.object({
   GOOGLE_APPLICATION_CREDENTIALS: z.string().optional(),
 
   GEMINI_API_KEY: z.string().optional(),
-  GEMINI_MODEL: z.string().default("gemini-3.6-flash"),
+  GEMINI_MODEL: z.string().default("gemini-3.5-flash-lite"),
   // Tried in order when the primary model is overloaded (comma separated).
   GEMINI_FALLBACK_MODELS: z
     .preprocess(blankToUndefined, z.string().optional())
-    .transform((value) => value ?? "gemini-3.8-flash,gemini-3.5-flash"),
+    .transform((value) => value ?? "gemini-3.8-flash,gemini-3.5-flash-lite"),
 
   // Any SMTP provider: Gmail + app password, Brevo, Resend, Mailgun, Zoho...
   SMTP_HOST: z.preprocess(blankToUndefined, z.string().optional()),
