@@ -252,7 +252,6 @@ const skills: Array<{
   { name: "Git", category: "Tech Stack", icon: "SiGit", brandColor: "#F05032", proficiency: "expert", order: 16 },
   { name: "Linux", category: "Tech Stack", icon: "SiLinux", brandColor: "#FCC624", proficiency: "familiar", order: 17 },
   { name: "Postman", category: "Tech Stack", icon: "SiPostman", brandColor: "#FF6C37", proficiency: "expert", order: 18 },
-  { name: "VS Code", category: "Other Tools", icon: "SiVisualstudiocode", brandColor: "#007ACC", proficiency: "expert", order: 1 },
   { name: "Figma", category: "Other Tools", icon: "SiFigma", brandColor: "#F24E1E", proficiency: "advanced", order: 2 },
   { name: "GitHub", category: "Other Tools", icon: "SiGithub", brandColor: "#FFFFFF", proficiency: "expert", order: 3 },
   { name: "Vercel", category: "Other Tools", icon: "SiVercel", brandColor: "#FFFFFF", proficiency: "advanced", order: 4 },
@@ -365,6 +364,17 @@ async function seed() {
       ],
     },
     portraitUrl: "/portfolio/bijoy.png",
+    // The role line is a typewriter — these phrases cycle in the hero banner.
+    // Editable in the dashboard (Hero section). `prefix` is unused now.
+    rotator: {
+      prefix: "",
+      lines: [
+        "Full-Stack Developer & Problem Solver",
+        "MERN & Next.js Developer",
+        "UI-focused Web Engineer",
+        "Backend & API Builder",
+      ],
+    },
     tagline: "Better Code, Better Tomorrow",
     order: 1,
   });
@@ -387,7 +397,7 @@ async function seed() {
     },
     highlights: [
       { icon: "MapPin", label: "Location", value: "Mirsarai, Chattogram, Bangladesh" },
-      { icon: "Mail", label: "Email", value: "nihaluddinbijoy@gmail.com" },
+      { icon: "Mail", label: "Email", value: "mdnihaluddinbijoy@gmail.com" },
       { icon: "CircleDot", label: "Status", value: "Open to offers / Ready to interview" },
       { icon: "Laptop", label: "Work mode", value: "Remote work preferred (No onsite)" },
     ],
@@ -430,8 +440,8 @@ async function seed() {
       isCurrent: false,
       status: "completed",
       description:
-        "Mentored fellow students through their first web projects, reviewing code and running hands-on sessions for the club.",
-      technologies: ["HTML", "CSS", "JavaScript", "Git"],
+        "Mentored fellow students through problem solving in Python, running hands-on sessions and reviewing members' code for the club.",
+      technologies: ["Python", "Problem Solving", "Data Structures", "Git"],
       order: 2,
     },
   ]);
@@ -533,8 +543,10 @@ async function seed() {
       navLogoDark: "",
       footerLogoLight: "",
       footerLogoDark: "",
-      faviconUrl: "/favicon.png",
+      // Empty favicon lets the tab show the generated mark tile ("NB").
+      faviconUrl: "",
       logoAlt: "Md. Nihal Uddin Bijoy",
+      mark: "NB",
       wordmark: "nihalxofficial",
     },
     typography: {
@@ -543,7 +555,7 @@ async function seed() {
       mono: "jetbrains-mono",
     },
     contact: {
-      email: "nihaluddinbijoy@gmail.com",
+      email: "mdnihaluddinbijoy@gmail.com",
       location: "Mirsarai, Chattogram, Bangladesh",
       availability: "Open to offers / Ready to interview",
       // Empty coordinates make the contact map geocode the location text.
@@ -556,6 +568,13 @@ async function seed() {
       { platform: "GitHub", url: "https://github.com/nihalxofficial", icon: "Github" },
       { platform: "LinkedIn", url: "https://www.linkedin.com/in/md-nihal-uddin/", icon: "Linkedin" },
       { platform: "Docker Hub", url: "https://hub.docker.com/u/nihalxofficial", icon: "Container" },
+      // Extra profiles: edit or add more from Control Centre → Site settings.
+      // { platform: "Facebook", url: "", icon: "SiFacebook" },
+      // { platform: "Twitter / X", url: "", icon: "SiX" },
+      // { platform: "WhatsApp", url: "", icon: "SiWhatsapp" },
+      // { platform: "Discord", url: "", icon: "SiDiscord" },
+      // { platform: "LeetCode", url: "", icon: "SiLeetcode" },
+      // { platform: "Stack Overflow", url: "", icon: "SiStackoverflow" },
     ],
     resumeUrl: "/Nihal_Full_Stack_Developer_Resume.pdf",
   });

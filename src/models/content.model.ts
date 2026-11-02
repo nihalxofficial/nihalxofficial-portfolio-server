@@ -36,6 +36,11 @@ const heroSchema = new Schema(
       command: { type: String, default: "whoami" },
       lines: { type: [String], default: [] },
     },
+    // Banner typewriter: cycles through `lines` behind an optional `prefix`.
+    rotator: {
+      prefix: { type: String, default: "" },
+      lines: { type: [String], default: [] },
+    },
     portraitUrl: { type: String, default: "" },
     // Short handwritten-style note floating beside the portrait.
     tagline: { type: String, default: "" },
@@ -172,6 +177,8 @@ const siteSettingsSchema = new Schema(
       footerLogoDark: { type: String, default: "" },
       faviconUrl: { type: String, default: "" },
       logoAlt: { type: String, default: "" },
+      // Short initials mark (e.g. "NB") used when no logo image is uploaded.
+      mark: { type: String, default: "" },
       // Short handle shown beside the mark, e.g. "nihalxofficial".
       wordmark: { type: String, default: "" },
     },

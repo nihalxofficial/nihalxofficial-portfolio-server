@@ -329,6 +329,14 @@ const ENTITIES: EntityDef[] = [
           { name: "lines", kind: "list" },
         ],
       },
+      {
+        name: "rotator",
+        kind: "object",
+        children: [
+          { name: "prefix", kind: "string" },
+          { name: "lines", kind: "list" },
+        ],
+      },
       { name: "portraitUrl", kind: "url" },
       { name: "tagline", kind: "string", max: 80 },
       ...ordered,
@@ -397,6 +405,7 @@ const ENTITIES: EntityDef[] = [
           { name: "footerLogoDark", kind: "url" },
           { name: "faviconUrl", kind: "url" },
           { name: "logoAlt", kind: "string", max: 120 },
+          { name: "mark", kind: "string", max: 4 },
           { name: "wordmark", kind: "string", max: 40 },
         ],
       },

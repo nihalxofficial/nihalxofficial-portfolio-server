@@ -8,6 +8,7 @@ import { isFirebaseConfigured } from "./config/firebase";
 import { errorHandler, notFoundHandler } from "./middlewares/error";
 import { aiRouter, aiAdminRouter } from "./modules/ai/ai.route";
 import { adminRouter } from "./modules/admin/content.route";
+import { analyticsAdminRouter, analyticsPublicRouter } from "./modules/analytics/analytics.route";
 import { authRouter } from "./modules/auth/auth.route";
 import { contactAdminRouter, contactPublicRouter } from "./modules/contact/contact.route";
 import { portfolioRouter } from "./modules/portfolio/portfolio.route";
@@ -61,11 +62,13 @@ export function createApp() {
 
   api.use("/portfolio", portfolioRouter);
   api.use("/contact", contactPublicRouter);
+  api.use("/analytics", analyticsPublicRouter);
   api.use("/ai", aiRouter);
   api.use("/auth", authRouter);
 
   api.use("/admin/messages", contactAdminRouter);
   api.use("/admin/ai", aiAdminRouter);
+  api.use("/admin/analytics", analyticsAdminRouter);
   // Generic content CRUD + dashboard overview, mounted last so the specific
   // admin routers above keep their own middleware.
   api.use("/admin", adminRouter);
