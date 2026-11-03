@@ -80,6 +80,7 @@ export interface AnalyticsOverview {
   oses: Array<{ name: string; count: number }>;
   devices: Array<{ name: string; count: number }>;
   countries: Array<{ country: string; code: string; lat?: number; lng?: number; count: number }>;
+  newVsReturning: { newVisitors: number; returningVisitors: number };
   recent: Array<{
     path: string;
     city: string;
@@ -202,6 +203,29 @@ export async function getOverview(days: number): Promise<AnalyticsOverview> {
   const totalDuration = durationRows.reduce((sum, row) => sum + row.total, 0);
   const durationSessions = durationRows.length || 1;
 
+  // New vs returning: a visitor is "new" when their earliest stored visit falls
+  // inside the range; otherwise they had been here before it started.
+  const visitorsInRange = (await VisitModel.distinct("visitorId", {
+    ...viewsOnly,
+    visitorId: { $ne: "" },
+  }))
+    .map((id) => String(id))
+    .filter(Boolean);
+  const returningIds = visitorsInRange.length
+    ? (
+        await VisitModel.distinct("visitorId", {
+          isBot: false,
+          visitorId: { $in: visitorsInRange },
+          createdAt: { $lt: from },
+        })
+      ).map((id) => String(id))
+    : [];
+  const returningVisitors = new Set(returningIds).size;
+  const newVsReturning = {
+    newVisitors: Math.max(0, visitorsInRange.length - returningVisitors),
+    returningVisitors,
+  };
+
   return {
     range: { days, from: from.toISOString() },
     totals: {
@@ -219,6 +243,7 @@ export async function getOverview(days: number): Promise<AnalyticsOverview> {
     oses,
     devices,
     countries,
+    newVsReturning,
     recent: recentDocs.map((doc) => ({
       path: doc.path,
       city: doc.city,
