@@ -134,6 +134,8 @@ const navigationSchema = new Schema(
     // Pinned to the mobile bottom dock. Everything else folds into "More",
     // so the owner decides which sections deserve a thumb-sized target.
     isPrimary: { type: Boolean, default: false },
+    // External links the owner wants to open in a new browser tab.
+    opensInNewTab: { type: Boolean, default: false },
     ...orderedFields,
   },
   baseOptions,
@@ -187,6 +189,28 @@ const siteSettingsSchema = new Schema(
       sans: { type: String, default: "" },
       display: { type: String, default: "" },
       mono: { type: String, default: "" },
+    },
+    // Owner-controlled global theme. These become the public site's default
+    // palette and background; a visitor's localStorage choice still overrides
+    // them for that visitor, so the shipped design never changes until it is
+    // explicitly customised here.
+    theme: {
+      // Key from the site's ACCENTS list (e.g. "cyan"); empty means the default.
+      accentId: { type: String, default: "" },
+      // Animated background engine, matching the frontend BackgroundMode union.
+      backgroundEffect: {
+        type: String,
+        enum: ["dna", "rain", "none", ""],
+        default: "",
+      },
+      // Free-form palette overrides. Any empty field falls back to the accent
+      // preset, so leaving these blank keeps the exact current appearance.
+      palette: {
+        primary: { type: String, default: "" },
+        secondary: { type: String, default: "" },
+        background: { type: String, default: "" },
+        text: { type: String, default: "" },
+      },
     },
     contact: {
       email: String,

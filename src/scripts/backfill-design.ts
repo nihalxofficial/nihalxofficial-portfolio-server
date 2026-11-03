@@ -40,6 +40,13 @@ const DEFAULT_TYPOGRAPHY = {
   mono: "jetbrains-mono",
 };
 
+// Matches the design's current out-of-the-box look, so seeding changes nothing.
+const DEFAULT_THEME = {
+  accentId: "cyan",
+  backgroundEffect: "dna",
+  palette: { primary: "", secondary: "", background: "", text: "" },
+};
+
 const STATS_GOALS = [
   "Get a full-time remote job",
   "Master DSA & System Design",
@@ -117,6 +124,18 @@ async function backfill() {
     { $set: { "contact.mapZoom": 12 } },
   );
 
+  // ── Settings: global theme defaults (never overwrite an owner's choice) ─────
+  const theme = await SiteSettingsModel.updateMany(
+    { $or: [{ theme: { $exists: false } }, { "theme.accentId": "" }, { "theme.accentId": { $exists: false } }] },
+    { $set: { theme: DEFAULT_THEME } },
+  );
+
+  // ── Navigation: ensure the new-tab flag exists on older documents ──────────
+  const navNewTab = await NavigationModel.updateMany(
+    { opensInNewTab: { $exists: false } },
+    { $set: { opensInNewTab: false } },
+  );
+
   // ── Section extras: the goals list beside the stats ────────────────────────
   const items = await SectionModel.updateMany(
     { key: "stats", $or: [{ items: { $exists: false } }, { items: { $size: 0 } }] },
@@ -147,6 +166,8 @@ async function backfill() {
     wordmark: wordmark.modifiedCount,
     typography: fonts.modifiedCount,
     mapZoom: zoom.modifiedCount,
+    theme: theme.modifiedCount,
+    navNewTab: navNewTab.modifiedCount,
     statsItems: items.modifiedCount,
     sectionHeadings: headings,
     aboutHeading: aboutDoc.modifiedCount,

@@ -276,6 +276,8 @@ const ENTITIES: EntityDef[] = [
       { name: "icon", kind: "string", max: 40 },
       // Shown in the mobile bottom dock; the rest collapse into "More".
       { name: "isPrimary", kind: "boolean" },
+      // Opens external links in a new tab when enabled.
+      { name: "opensInNewTab", kind: "boolean" },
       ...ordered,
     ],
   },
@@ -417,6 +419,26 @@ const ENTITIES: EntityDef[] = [
           { name: "sans", kind: "string", max: 40 },
           { name: "display", kind: "string", max: 40 },
           { name: "mono", kind: "string", max: 40 },
+        ],
+      },
+      {
+        // Global theme: the site's default accent, animated background engine,
+        // and optional palette overrides. Empty values keep the built-in design.
+        name: "theme",
+        kind: "object",
+        children: [
+          { name: "accentId", kind: "string", max: 40 },
+          { name: "backgroundEffect", kind: "string", max: 12 },
+          {
+            name: "palette",
+            kind: "object",
+            children: [
+              { name: "primary", kind: "string", max: 30 },
+              { name: "secondary", kind: "string", max: 30 },
+              { name: "background", kind: "string", max: 30 },
+              { name: "text", kind: "string", max: 30 },
+            ],
+          },
         ],
       },
       {

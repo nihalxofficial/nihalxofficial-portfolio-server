@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
-import { getOverview, getRealtime, recordVisit } from "./analytics.service";
+import { getOverview, getProjectAnalytics, getRealtime, recordVisit } from "./analytics.service";
 import type { AnalyticsQuery, TrackVisitInput } from "./analytics.validator";
 
 /**
@@ -25,4 +25,12 @@ export const analyticsRealtime = catchAsync(async (req: Request, res: Response) 
   const data = await getRealtime();
 
   return sendResponse(res, 200, { message: "Live traffic", data });
+});
+
+export const analyticsProjects = catchAsync(async (req: Request, res: Response) => {
+  const query = req.query as unknown as AnalyticsQuery;
+  const days = query.days ?? 30;
+  const data = await getProjectAnalytics(days);
+
+  return sendResponse(res, 200, { message: "Project analytics", data });
 });

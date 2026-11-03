@@ -1,5 +1,5 @@
 import type { Request } from "express";
-import { VisitModel } from "../../models";
+import { ProjectModel, VisitModel } from "../../models";
 import { resolveGeo } from "../../utils/geo";
 import { parseUserAgent } from "../../utils/userAgent";
 import type { TrackVisitInput } from "./analytics.validator";
@@ -29,12 +29,21 @@ export async function recordVisit(req: Request, input: TrackVisitInput) {
 
   const geo = resolveGeo(req);
 
-  // Beats and leaves don't need the marketing fields re-derived every time.
+  const resolvedProjectId =
+    input.projectId ||
+    (input.path.startsWith("/projects/") ? input.path.replace("/projects/", "").split("/")[0] : "");
+
+  const resolvedEventType =
+    input.eventType ||
+    (input.kind === "click" ? "project_click" : input.path.startsWith("/projects/") ? "project_view" : "page_view");
+
   await VisitModel.create({
     kind: input.kind,
     sessionId: input.sessionId,
     visitorId: input.visitorId ?? "",
     path: input.path,
+    projectId: resolvedProjectId,
+    eventType: resolvedEventType,
     referrer: input.referrer ?? "",
     source: deriveSource(input.referrer),
     durationMs: input.durationMs ?? 0,
@@ -283,5 +292,245 @@ export async function getRealtime(): Promise<AnalyticsRealtime> {
       device: doc.device,
       at: (doc.createdAt ?? new Date()).toISOString(),
     })),
+  };
+}
+
+// ─── Dedicated Project Engagement Analytics ──────────────────────────────────
+
+export interface ProjectPerformanceMetric {
+  slug: string;
+  title: string;
+  thumbnailUrl: string;
+  category: string;
+  views: number;
+  uniqueVisitors: number;
+  clicks: number;
+  totalDurationMs: number;
+  avgDurationSec: number;
+  ctr: number;
+}
+
+export interface ProjectAnalyticsOverview {
+  range: { days: number; from: string };
+  totals: {
+    totalProjectViews: number;
+    totalProjectClicks: number;
+    totalUniqueVisitors: number;
+    avgEngagementDurationSec: number;
+  };
+  mostViewedProject: ProjectPerformanceMetric | null;
+  mostEngagedProject: ProjectPerformanceMetric | null;
+  projects: ProjectPerformanceMetric[];
+  viewsComparison: Array<{ title: string; slug: string; views: number; clicks: number }>;
+  timeline: Array<Record<string, string | number>>;
+}
+
+export async function getProjectAnalytics(days: number): Promise<ProjectAnalyticsOverview> {
+  const from = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const baseMatch = { isBot: false, createdAt: { $gte: from } };
+
+  const [allProjects, homeViews, viewRows, clickRows, leaveRows, timelineRows] = await Promise.all([
+    ProjectModel.find({}).sort({ order: 1, createdAt: -1 }).select("title slug thumbnailUrl category isFeatured order").lean(),
+    VisitModel.countDocuments({ ...baseMatch, kind: "view", path: "/" }),
+    // Group views by project
+    VisitModel.aggregate([
+      {
+        $match: {
+          ...baseMatch,
+          kind: "view",
+          $or: [
+            { projectId: { $ne: "" } },
+            { path: { $regex: "^/projects/" } },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          resolvedSlug: {
+            $cond: [
+              { $gt: [{ $strLenCP: { $ifNull: ["$projectId", ""] } }, 0] },
+              "$projectId",
+              { $arrayElemAt: [{ $split: [{ $substrCP: ["$path", 10, -1] }, "/"] }, 0] },
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$resolvedSlug",
+          views: { $sum: 1 },
+          visitors: { $addToSet: { $ifNull: ["$visitorId", "$sessionId"] } },
+        },
+      },
+    ]),
+    // Group clicks by project
+    VisitModel.aggregate([
+      {
+        $match: {
+          ...baseMatch,
+          kind: "click",
+        },
+      },
+      {
+        $group: {
+          _id: "$projectId",
+          clicks: { $sum: 1 },
+        },
+      },
+    ]),
+    // Group dwell durations by project
+    VisitModel.aggregate([
+      {
+        $match: {
+          ...baseMatch,
+          kind: "leave",
+          $or: [
+            { projectId: { $ne: "" } },
+            { path: { $regex: "^/projects/" } },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          resolvedSlug: {
+            $cond: [
+              { $gt: [{ $strLenCP: { $ifNull: ["$projectId", ""] } }, 0] },
+              "$projectId",
+              { $arrayElemAt: [{ $split: [{ $substrCP: ["$path", 10, -1] }, "/"] }, 0] },
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$resolvedSlug",
+          totalDurationMs: { $sum: "$durationMs" },
+        },
+      },
+    ]),
+    // Group daily timeline per project
+    VisitModel.aggregate([
+      {
+        $match: {
+          ...baseMatch,
+          kind: "view",
+          $or: [
+            { projectId: { $ne: "" } },
+            { path: { $regex: "^/projects/" } },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          resolvedSlug: {
+            $cond: [
+              { $gt: [{ $strLenCP: { $ifNull: ["$projectId", ""] } }, 0] },
+              "$projectId",
+              { $arrayElemAt: [{ $split: [{ $substrCP: ["$path", 10, -1] }, "/"] }, 0] },
+            ],
+          },
+          bucket: {
+            $dateToString: {
+              format: days <= 2 ? "%Y-%m-%dT%H:00" : "%Y-%m-%d",
+              date: "$createdAt",
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { bucket: "$bucket", slug: "$resolvedSlug" },
+          views: { $sum: 1 },
+        },
+      },
+    ]),
+  ]);
+
+  const viewsMap = new Map<string, { views: number; uniqueVisitors: number }>();
+  for (const r of viewRows) {
+    if (r._id) {
+      viewsMap.set(String(r._id).toLowerCase(), {
+        views: r.views,
+        uniqueVisitors: Array.isArray(r.visitors) ? r.visitors.length : 0,
+      });
+    }
+  }
+
+  const clicksMap = new Map<string, number>();
+  for (const r of clickRows) {
+    if (r._id) {
+      clicksMap.set(String(r._id).toLowerCase(), r.clicks);
+    }
+  }
+
+  const durationMap = new Map<string, number>();
+  for (const r of leaveRows) {
+    if (r._id) {
+      durationMap.set(String(r._id).toLowerCase(), r.totalDurationMs);
+    }
+  }
+
+  const baselineHomeViews = Math.max(homeViews, 1);
+
+  const metrics: ProjectPerformanceMetric[] = allProjects.map((p) => {
+    const slug = (p.slug || "").toLowerCase();
+    const v = viewsMap.get(slug) ?? { views: 0, uniqueVisitors: 0 };
+    const clicks = clicksMap.get(slug) ?? 0;
+    const totalDurationMs = durationMap.get(slug) ?? 0;
+    const avgDurationSec = v.views > 0 ? Math.round(totalDurationMs / (v.views * 1000)) : 0;
+    const ctr = Number(((clicks / baselineHomeViews) * 100).toFixed(1));
+
+    return {
+      slug: p.slug,
+      title: p.title,
+      thumbnailUrl: p.thumbnailUrl || "",
+      category: p.category || "Full-Stack",
+      views: v.views,
+      uniqueVisitors: v.uniqueVisitors,
+      clicks,
+      totalDurationMs,
+      avgDurationSec,
+      ctr,
+    };
+  });
+
+  const totalProjectViews = metrics.reduce((acc, m) => acc + m.views, 0);
+  const totalProjectClicks = metrics.reduce((acc, m) => acc + m.clicks, 0);
+  const totalUniqueVisitors = metrics.reduce((acc, m) => acc + m.uniqueVisitors, 0);
+  const totalDurationSum = metrics.reduce((acc, m) => acc + m.totalDurationMs, 0);
+  const avgEngagementDurationSec =
+    totalProjectViews > 0 ? Math.round(totalDurationSum / (totalProjectViews * 1000)) : 0;
+
+  const sortedByViews = [...metrics].sort((a, b) => b.views - a.views);
+  const sortedByEngagement = [...metrics].sort((a, b) => b.avgDurationSec - a.avgDurationSec);
+
+  // Group timeline by bucket
+  const timelineBucketsMap = new Map<string, Record<string, string | number>>();
+  for (const row of timelineRows) {
+    const bucket = row._id.bucket;
+    const slug = row._id.slug;
+    if (!timelineBucketsMap.has(bucket)) {
+      timelineBucketsMap.set(bucket, { bucket });
+    }
+    const b = timelineBucketsMap.get(bucket)!;
+    b[slug] = row.views;
+  }
+  const timeline = Array.from(timelineBucketsMap.values()).sort((a, b) =>
+    String(a.bucket).localeCompare(String(b.bucket))
+  );
+
+  return {
+    range: { days, from: from.toISOString() },
+    totals: {
+      totalProjectViews,
+      totalProjectClicks,
+      totalUniqueVisitors,
+      avgEngagementDurationSec,
+    },
+    mostViewedProject: sortedByViews[0] && sortedByViews[0].views > 0 ? sortedByViews[0] : (metrics[0] ?? null),
+    mostEngagedProject: sortedByEngagement[0] && sortedByEngagement[0].avgDurationSec > 0 ? sortedByEngagement[0] : (metrics[0] ?? null),
+    projects: metrics,
+    viewsComparison: metrics.map((m) => ({ title: m.title, slug: m.slug, views: m.views, clicks: m.clicks })),
+    timeline,
   };
 }
