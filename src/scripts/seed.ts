@@ -496,28 +496,33 @@ async function seed() {
 
   await NavigationModel.insertMany([
     // isPrimary = pinned to the mobile bottom dock; the rest live in "More".
+    // These five are the published navigation the design shows out of the box;
+    // the rest ship hidden so the Navigation Manager can toggle them back on.
     { label: "Home", href: "#hero", icon: "Home", order: 1, isPrimary: true },
     { label: "About", href: "#about", icon: "User", order: 2 },
     { label: "Skills", href: "#skills", icon: "Wrench", order: 3 },
-    { label: "Projects", href: "#projects", icon: "FolderKanban", order: 4, isPrimary: true },
-    { label: "Experience", href: "#journey", icon: "Briefcase", order: 5 },
-    { label: "Education", href: "#education", icon: "GraduationCap", order: 6 },
-    { label: "Blog", href: "#blog", icon: "Newspaper", order: 7 },
-    { label: "Contact", href: "#contact", icon: "Mail", order: 8, isPrimary: true },
+    { label: "Showcase", href: "#showcase", icon: "Rocket", order: 4, isPrimary: true },
+    { label: "Contact", href: "#contact", icon: "Mail", order: 5, isPrimary: true },
+    { label: "Projects", href: "#projects", icon: "FolderKanban", order: 6, isPrimary: true, isVisible: false },
+    { label: "Experience", href: "#journey", icon: "Briefcase", order: 7, isVisible: false },
+    { label: "Education", href: "#education", icon: "GraduationCap", order: 8, isVisible: false },
+    { label: "Blog", href: "#blog", icon: "Newspaper", order: 9, isVisible: false },
   ]);
 
   await SectionModel.insertMany([
     { key: "hero", label: "Home", heading: "Hero", order: 1, isVisible: true },
     { key: "about", label: "About Me", heading: "Who Am I?", order: 2, isVisible: true },
     { key: "stats", label: "Numbers Speak", heading: "Numbers Speak", items: ["Get a full-time remote job", "Master DSA & System Design", "Contribute to open source", "Build something meaningful"], order: 3, isVisible: true },
-    { key: "skills", label: "Skills & Tools", heading: "Skills & Technologies", order: 4, isVisible: true },
-    { key: "projects", label: "Projects", heading: "Featured Projects", order: 5, isVisible: true },
-    { key: "showcase", label: "Showcase", heading: "Project Showcase", order: 6, isVisible: true },
-    { key: "journey", label: "Experience", heading: "My Journey", order: 7, isVisible: true },
-    { key: "education", label: "Education", heading: "Academic Background", order: 8, isVisible: true },
-    { key: "certifications", label: "Certifications", heading: "Certifications", order: 9, isVisible: false },
-    { key: "blog", label: "Blog", heading: "Writing", order: 10, isVisible: false },
-    { key: "contact", label: "Get In Touch", heading: "Let's Build Something Great Together", order: 11, isVisible: true },
+    { key: "services", label: "Services", heading: "What I Do", order: 4, isVisible: true },
+    { key: "skills", label: "Skills & Tools", heading: "Skills & Technologies", order: 5, isVisible: true },
+    { key: "projects", label: "Projects", heading: "Featured Projects", order: 6, isVisible: true },
+    { key: "showcase", label: "Showcase", heading: "Project Showcase", order: 7, isVisible: true },
+    { key: "journey", label: "Experience", heading: "My Journey", order: 8, isVisible: true },
+    { key: "education", label: "Education", heading: "Academic Background", order: 9, isVisible: true },
+    { key: "certifications", label: "Certifications", heading: "Certifications", order: 10, isVisible: false },
+    { key: "testimonials", label: "Testimonials", heading: "What People Say", order: 11, isVisible: false },
+    { key: "blog", label: "Blog", heading: "Writing", order: 12, isVisible: false },
+    { key: "contact", label: "Get In Touch", heading: "Let's Build Something Great Together", order: 13, isVisible: true },
   ]);
 
   await SiteSettingsModel.create({

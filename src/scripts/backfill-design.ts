@@ -57,6 +57,15 @@ const STATS_GOALS = [
 /** Destinations worth a thumb-sized target in the mobile bottom dock. */
 const DOCK_HREFS = ["#hero", "#projects", "#contact"];
 
+/**
+ * The navigation set the redesign publishes by default: the five anchors that
+ * were previously hard-coded in `app/page.tsx`. Everything else ships hidden so
+ * the Navigation Manager can re-enable it, keeping the out-of-the-box visuals
+ * identical while moving control into the CMS.
+ */
+const NAV_PUBLISHED = ["#hero", "#about", "#skills", "#showcase", "#contact"];
+const NAV_UNPUBLISHED = ["#projects", "#journey", "#education", "#blog"];
+
 /** Headings the About block shipped with, before the redesign renamed it. */
 const ABOUT_LEGACY_HEADINGS = ["", "A little about me"];
 
@@ -158,6 +167,46 @@ async function backfill() {
     { $set: { heading: "Who Am I?" } },
   );
 
+  // ── Publish-ready defaults: align nav + section rows with the current design ─
+  // The homepage now renders purely from `sections`/`navigation`, so existing
+  // databases need the same published set the design shows out of the box. This
+  // is a one-shot migration, gated on the `#showcase` nav item: it never exists
+  // in a pre-CMS database, and once created an admin's later edits are respected.
+  let navAligned = 0;
+  let sectionsAdded = 0;
+  const showcase = await NavigationModel.findOne({ href: "#showcase" });
+  if (!showcase) {
+    await NavigationModel.create({
+      label: "Showcase",
+      href: "#showcase",
+      icon: "Rocket",
+      order: 5,
+      isPrimary: true,
+      isVisible: true,
+    });
+
+    const visible = await NavigationModel.updateMany(
+      { href: { $in: NAV_PUBLISHED } },
+      { $set: { isVisible: true } },
+    );
+    const hidden = await NavigationModel.updateMany(
+      { href: { $in: NAV_UNPUBLISHED } },
+      { $set: { isVisible: false } },
+    );
+    navAligned = 1 + visible.modifiedCount + hidden.modifiedCount;
+
+    // Section rows the homepage renders that the original seed never carried.
+    const upsertSection = (row: { key: string; label: string; heading: string; order: number; isVisible: boolean }) =>
+      SectionModel.updateOne(
+        { key: row.key },
+        { $setOnInsert: row },
+        { upsert: true },
+      );
+    await upsertSection({ key: "services", label: "Services", heading: "What I Do", order: 4, isVisible: true });
+    await upsertSection({ key: "testimonials", label: "Testimonials", heading: "What People Say", order: 11, isVisible: false });
+    sectionsAdded = 2;
+  }
+
   // eslint-disable-next-line no-console
   console.log("[backfill:design] documents updated:", {
     navigationIcons: icons,
@@ -171,6 +220,8 @@ async function backfill() {
     statsItems: items.modifiedCount,
     sectionHeadings: headings,
     aboutHeading: aboutDoc.modifiedCount,
+    navAligned,
+    sectionsAdded,
   });
 
   await disconnectDatabase();
