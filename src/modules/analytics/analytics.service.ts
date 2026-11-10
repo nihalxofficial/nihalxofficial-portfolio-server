@@ -27,6 +27,16 @@ export async function recordVisit(req: Request, input: TrackVisitInput) {
   const agent = parseUserAgent(req.headers["user-agent"] ?? "");
   if (agent.isBot) return { recorded: false };
 
+  // Never record admin activities, dashboard control-centre navigations, or requests with admin tokens
+  if (
+    input.isAdmin ||
+    input.path.startsWith("/control-centre") ||
+    input.path.startsWith("/admin") ||
+    Boolean(req.headers.authorization)
+  ) {
+    return { recorded: false };
+  }
+
   const geo = resolveGeo(req);
 
   const resolvedProjectId =
@@ -102,8 +112,15 @@ function groupByField(match: Record<string, unknown>, field: string, limit = 8) 
 }
 
 export async function getOverview(days: number): Promise<AnalyticsOverview> {
+  // Purge any legacy admin/control-centre activity rows in the background
+  void VisitModel.deleteMany({ path: { $regex: "^/(control-centre|admin)", $options: "i" } }).catch(() => {});
+
   const from = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-  const base = { isBot: false, createdAt: { $gte: from } };
+  const base = {
+    isBot: false,
+    createdAt: { $gte: from },
+    path: { $not: /^\/(control-centre|admin)/i },
+  };
   const viewsOnly = { ...base, kind: "view" };
 
   const [pvRow, sessionRows, durationRows, onlineRows, timeline, topPages, sources, browsers, oses, devices, countries] =
@@ -272,7 +289,11 @@ export interface AnalyticsRealtime {
 /** Cheap, polled every ~15s: who is on the site in the last five minutes. */
 export async function getRealtime(): Promise<AnalyticsRealtime> {
   const since = new Date(Date.now() - ONLINE_WINDOW_MS);
-  const match = { isBot: false, createdAt: { $gte: since } };
+  const match = {
+    isBot: false,
+    createdAt: { $gte: since },
+    path: { $not: /^\/(control-centre|admin)/i },
+  };
 
   const [sessions, pages, countries, eventDocs] = await Promise.all([
     VisitModel.aggregate([{ $match: match }, { $group: { _id: "$sessionId" } }]),
@@ -352,7 +373,11 @@ export interface ProjectAnalyticsOverview {
 
 export async function getProjectAnalytics(days: number): Promise<ProjectAnalyticsOverview> {
   const from = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-  const baseMatch = { isBot: false, createdAt: { $gte: from } };
+  const baseMatch = {
+    isBot: false,
+    createdAt: { $gte: from },
+    path: { $not: /^\/(control-centre|admin)/i },
+  };
 
   const [allProjects, homeViews, viewRows, clickRows, leaveRows, timelineRows] = await Promise.all([
     ProjectModel.find({}).sort({ order: 1, createdAt: -1 }).select("title slug thumbnailUrl category isFeatured order").lean(),
@@ -375,7 +400,7 @@ export async function getProjectAnalytics(days: number): Promise<ProjectAnalytic
             $cond: [
               { $gt: [{ $strLenCP: { $ifNull: ["$projectId", ""] } }, 0] },
               "$projectId",
-              { $arrayElemAt: [{ $split: [{ $substrCP: ["$path", 10, -1] }, "/"] }, 0] },
+              { $ifNull: [{ $arrayElemAt: [{ $split: ["$path", "/"] }, 2] }, ""] },
             ],
           },
         },
@@ -421,7 +446,7 @@ export async function getProjectAnalytics(days: number): Promise<ProjectAnalytic
             $cond: [
               { $gt: [{ $strLenCP: { $ifNull: ["$projectId", ""] } }, 0] },
               "$projectId",
-              { $arrayElemAt: [{ $split: [{ $substrCP: ["$path", 10, -1] }, "/"] }, 0] },
+              { $ifNull: [{ $arrayElemAt: [{ $split: ["$path", "/"] }, 2] }, ""] },
             ],
           },
         },
@@ -451,7 +476,7 @@ export async function getProjectAnalytics(days: number): Promise<ProjectAnalytic
             $cond: [
               { $gt: [{ $strLenCP: { $ifNull: ["$projectId", ""] } }, 0] },
               "$projectId",
-              { $arrayElemAt: [{ $split: [{ $substrCP: ["$path", 10, -1] }, "/"] }, 0] },
+              { $ifNull: [{ $arrayElemAt: [{ $split: ["$path", "/"] }, 2] }, ""] },
             ],
           },
           bucket: {
