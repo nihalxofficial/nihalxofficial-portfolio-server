@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { ApiError } from "../../utils/apiError";
 import { sendResponse } from "../../utils/sendResponse";
-import { MediaAssetModel } from "./models";
+import { MediaAssetModel } from "./media.model";
 import { createContent, getContent, listContent, removeContent, updateContent } from "./media.service";
 
 const listQuerySchema = z.object({

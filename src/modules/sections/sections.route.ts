@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { requireAdmin } from "../../middlewares/auth";
+import { requireAuth } from "../../middlewares/auth.middleware";
+import { requireRole } from "../../middlewares/role.middleware";
 import {
   createSection,
   deleteSection,
@@ -9,7 +10,7 @@ import {
 } from "./sections.controller";
 
 export const sectionsRouter = Router();
-sectionsRouter.use(requireAdmin);
+sectionsRouter.use(requireAuth, requireRole("admin"));
 
 sectionsRouter.get("/", listSections);
 sectionsRouter.post("/", createSection);

@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { StatisticModel } from "./models";
+import { StatisticModel } from "./statistics.model";
 import { ApiError } from "../../utils/apiError";
 import { parsePagination } from "../../utils/sendResponse";
 

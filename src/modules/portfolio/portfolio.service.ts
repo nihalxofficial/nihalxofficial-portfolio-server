@@ -1,17 +1,17 @@
-import { AboutModel } from "../about/models";
-import { BlogPostModel } from "../posts/models";
-import { CertificationModel } from "../certifications/models";
-import { EducationModel } from "../education/models";
-import { ExperienceModel } from "../experience/models";
-import { HeroModel } from "../hero/models";
-import { NavigationModel } from "../navigation/models";
-import { ProjectModel } from "../projects/models";
-import { SectionModel } from "../sections/models";
-import { ServiceModel } from "../services/models";
-import { SiteSettingsModel } from "../settings/models";
-import { SkillModel } from "../skills/models";
-import { StatisticModel } from "../statistics/models";
-import { TestimonialModel } from "../testimonials/models";
+import { AboutModel } from "../about/about.model";
+import { BlogPostModel } from "../posts/posts.model";
+import { CertificationModel } from "../certifications/certifications.model";
+import { EducationModel } from "../education/education.model";
+import { ExperienceModel } from "../experience/experience.model";
+import { HeroModel } from "../hero/hero.model";
+import { NavigationModel } from "../navigation/navigation.model";
+import { ProjectModel } from "../projects/projects.model";
+import { SectionModel } from "../sections/sections.model";
+import { ServiceModel } from "../services/services.model";
+import { SiteSettingsModel } from "../settings/settings.model";
+import { SkillModel } from "../skills/skills.model";
+import { StatisticModel } from "../statistics/statistics.model";
+import { TestimonialModel } from "../testimonials/testimonials.model";
 
 export interface SkillGroup {
   category: string;

@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { ApiError } from "../../utils/apiError";
 import { sendResponse } from "../../utils/sendResponse";
-import { SkillModel } from "./models";
+import { SkillModel } from "./skills.model";
 import { createContent, getContent, listContent, removeContent, updateContent } from "./skills.service";
 
 const listQuerySchema = z.object({

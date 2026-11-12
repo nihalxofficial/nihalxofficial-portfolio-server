@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { validate } from "../../middlewares/validate";
-import { requireAdmin } from "../../middlewares/auth";
+import { requireAuth } from "../../middlewares/auth.middleware";
+import { requireRole } from "../../middlewares/role.middleware";
 import { assistLimiter, chatLimiter } from "../../middlewares/rateLimit";
 import { chat, formFill } from "./ai.controller";
 import { chatRequestSchema, formFillRequestSchema } from "./ai.validator";
@@ -13,7 +14,7 @@ export const aiRouter = router;
 
 // Private: writing assistant used inside the dashboard forms.
 const adminRouter = Router();
-adminRouter.use(requireAdmin);
+adminRouter.use(requireAuth, requireRole("admin"));
 adminRouter.post(
   "/form-fill",
   assistLimiter,

@@ -1,54 +1,57 @@
 import { Router } from "express";
-import { isFirebaseConfigured } from "../../config/firebase";
-import { env } from "../../config/env";
-import { requireAdmin, requireUser } from "../../middlewares/auth";
+import { requireAuth } from "../../middlewares/auth.middleware";
+import { requireRole } from "../../middlewares/role.middleware";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 
 const router = Router();
 
-/**
- * Token probe for register/login screens.
- *
- * A brand new Firebase account is allowed to call this so the UI can show its
- * UID ("add this to ADMIN_UIDS"), but the response never exposes content.
- */
 router.get(
   "/status",
-  requireUser,
+  requireAuth,
   catchAsync(async (req, res) => {
-    const uid = req.admin?.uid ?? "";
+    const user = req.user;
+    const isAdmin =
+      user?.role === "admin" ||
+      user?.activeRole === "admin" ||
+      (Array.isArray(user?.roles) && user.roles.includes("admin"));
 
     return sendResponse(res, 200, {
       message: "Token verified",
       data: {
-        uid,
-        email: req.admin?.email ?? null,
-        name: req.admin?.name ?? null,
-        isAdmin: env.adminUids.includes(uid),
-        firebaseConfigured: isFirebaseConfigured(),
-        adminCount: env.adminUids.length,
+        uid: user?.id ?? "",
+        email: user?.email ?? null,
+        name: user?.name ?? null,
+        role: user?.role,
+        roles: user?.roles,
+        isAdmin,
+        firebaseConfigured: true,
+        adminCount: isAdmin ? 1 : 0,
       },
     });
   }),
 );
 
-/** Confirms to the dashboard that the token is valid AND on the allowlist. */
 router.get(
   "/session",
-  requireAdmin,
-  catchAsync(async (req, res) =>
-    sendResponse(res, 200, {
+  requireAuth,
+  requireRole("admin"),
+  catchAsync(async (req, res) => {
+    const user = req.user;
+    return sendResponse(res, 200, {
       message: "Session verified",
       data: {
-        uid: req.admin?.uid,
-        email: req.admin?.email ?? null,
-        name: req.admin?.name ?? null,
-        firebaseConfigured: isFirebaseConfigured(),
-        adminCount: env.adminUids.length,
+        uid: user?.id,
+        email: user?.email ?? null,
+        name: user?.name ?? null,
+        role: user?.role,
+        roles: user?.roles,
+        firebaseConfigured: true,
+        adminCount: 1,
       },
-    }),
-  ),
+    });
+  }),
 );
 
 export const authRouter = router;
+export default router;

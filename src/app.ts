@@ -4,8 +4,8 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import { env } from "./config/env";
-import { isFirebaseConfigured } from "./config/firebase";
-import { errorHandler, notFoundHandler } from "./middlewares/error";
+import { errorMiddleware } from "./middlewares/error.middleware";
+import { notFound } from "./middlewares/notFound.middleware";
 import { aiRouter, aiAdminRouter } from "./modules/ai/ai.route";
 import { analyticsAdminRouter, analyticsPublicRouter } from "./modules/analytics/analytics.route";
 import { authRouter } from "./modules/auth/auth.route";
@@ -61,7 +61,7 @@ export function createApp() {
       success: true,
       status: "ok",
       environment: env.NODE_ENV,
-      firebase: isFirebaseConfigured() ? "configured" : "missing",
+      auth: "better-auth",
       assistant: env.GEMINI_API_KEY ? "configured" : "missing",
       email: env.smtpConfigured ? "configured" : "missing",
       media: env.IMGBB_API_KEY ? "configured" : "missing",
@@ -100,8 +100,8 @@ export function createApp() {
 
   app.use("/api/v1", api);
 
-  app.use(notFoundHandler);
-  app.use(errorHandler);
+  app.use(notFound);
+  app.use(errorMiddleware);
 
   return app;
 }

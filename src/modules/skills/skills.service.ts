@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { SkillModel } from "./models";
+import { SkillModel } from "./skills.model";
 import { ApiError } from "../../utils/apiError";
 import { parsePagination } from "../../utils/sendResponse";
 

@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { requireAdmin } from "../../middlewares/auth";
+import { requireAuth } from "../../middlewares/auth.middleware";
+import { requireRole } from "../../middlewares/role.middleware";
 import {
   createCertification,
   deleteCertification,
@@ -9,7 +10,7 @@ import {
 } from "./certifications.controller";
 
 export const certificationsRouter = Router();
-certificationsRouter.use(requireAdmin);
+certificationsRouter.use(requireAuth, requireRole("admin"));
 
 certificationsRouter.get("/", listCertifications);
 certificationsRouter.post("/", createCertification);

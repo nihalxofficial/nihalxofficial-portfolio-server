@@ -10,20 +10,20 @@
  */
 import mongoose from "mongoose";
 import { connectDatabase, disconnectDatabase } from "../config/db";
-import { AboutModel } from "../modules/about/models";
-import { BlogPostModel } from "../modules/posts/models";
-import { CertificationModel } from "../modules/certifications/models";
-import { EducationModel } from "../modules/education/models";
-import { ExperienceModel } from "../modules/experience/models";
-import { HeroModel } from "../modules/hero/models";
-import { NavigationModel } from "../modules/navigation/models";
-import { ProjectModel } from "../modules/projects/models";
-import { SectionModel } from "../modules/sections/models";
-import { ServiceModel } from "../modules/services/models";
-import { SiteSettingsModel } from "../modules/settings/models";
-import { SkillModel } from "../modules/skills/models";
-import { StatisticModel } from "../modules/statistics/models";
-import { TestimonialModel } from "../modules/testimonials/models";
+import { AboutModel } from "../modules/about/about.model";
+import { BlogPostModel } from "../modules/posts/posts.model";
+import { CertificationModel } from "../modules/certifications/certifications.model";
+import { EducationModel } from "../modules/education/education.model";
+import { ExperienceModel } from "../modules/experience/experience.model";
+import { HeroModel } from "../modules/hero/hero.model";
+import { NavigationModel } from "../modules/navigation/navigation.model";
+import { ProjectModel } from "../modules/projects/projects.model";
+import { SectionModel } from "../modules/sections/sections.model";
+import { ServiceModel } from "../modules/services/services.model";
+import { SiteSettingsModel } from "../modules/settings/settings.model";
+import { SkillModel } from "../modules/skills/skills.model";
+import { StatisticModel } from "../modules/statistics/statistics.model";
+import { TestimonialModel } from "../modules/testimonials/testimonials.model";
 
 const showcase = (slug: string) => `/project-images/showcase/${slug}.png`;
 

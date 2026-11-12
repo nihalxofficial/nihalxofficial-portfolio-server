@@ -1,16 +1,16 @@
 import { env } from "../../config/env";
 import { ApiError } from "../../utils/apiError";
 import { getClient, getModelChain, isAssistantConfigured, isTransientAiError } from "./ai.client";
-import { AboutModel } from "../about/models";
-import { CertificationModel } from "../certifications/models";
-import { EducationModel } from "../education/models";
-import { ExperienceModel } from "../experience/models";
-import { HeroModel } from "../hero/models";
-import { ProjectModel } from "../projects/models";
-import { ServiceModel } from "../services/models";
-import { SiteSettingsModel } from "../settings/models";
-import { SkillModel } from "../skills/models";
-import { StatisticModel } from "../statistics/models";
+import { AboutModel } from "../about/about.model";
+import { CertificationModel } from "../certifications/certifications.model";
+import { EducationModel } from "../education/education.model";
+import { ExperienceModel } from "../experience/experience.model";
+import { HeroModel } from "../hero/hero.model";
+import { ProjectModel } from "../projects/projects.model";
+import { ServiceModel } from "../services/services.model";
+import { SiteSettingsModel } from "../settings/settings.model";
+import { SkillModel } from "../skills/skills.model";
+import { StatisticModel } from "../statistics/statistics.model";
 import type { ChatMessage } from "./ai.validator";
 
 export { isAssistantConfigured } from "./ai.client";
@@ -34,7 +34,7 @@ async function buildGroundingContext(): Promise<string> {
       SiteSettingsModel.findOne({ key: "main" }).lean(),
     ]);
 
-  const skillsByCategory = skills.reduce<Record<string, string[]>>((acc, skill) => {
+  const skillsByCategory = skills.reduce<Record<string, string[]>>((acc: Record<string, string[]>, skill: any) => {
     (acc[skill.category] ??= []).push(skill.name);
     return acc;
   }, {});
@@ -43,50 +43,50 @@ async function buildGroundingContext(): Promise<string> {
 
   if (hero) {
     lines.push(`# Identity`);
-    lines.push(`Name: ${hero.name}`);
-    lines.push(`Role: ${hero.role}`);
-    lines.push(`Summary: ${hero.description}`);
-    lines.push(`Availability: ${hero.availability?.label ?? "Not specified"}`);
+    lines.push(`Name: ${(hero as any).name}`);
+    lines.push(`Role: ${(hero as any).role}`);
+    lines.push(`Summary: ${(hero as any).description}`);
+    lines.push(`Availability: ${(hero as any).availability?.label ?? "Not specified"}`);
   }
 
   if (settings?.contact) {
-    lines.push(`Email: ${settings.contact.email ?? "not public"}`);
-    lines.push(`Location: ${settings.contact.location ?? "not specified"}`);
+    lines.push(`Email: ${(settings as any).contact.email ?? "not public"}`);
+    lines.push(`Location: ${(settings as any).contact.location ?? "not specified"}`);
   }
 
-  if (settings?.socialLinks?.length) {
+  if ((settings as any)?.socialLinks?.length) {
     lines.push(
-      `Links: ${settings.socialLinks.map((link) => `${link.platform} ${link.url}`).join(", ")}`,
+      `Links: ${(settings as any).socialLinks.map((link: any) => `${link.platform} ${link.url}`).join(", ")}`,
     );
   }
 
-  if (about?.paragraphs?.length) {
+  if ((about as any)?.paragraphs?.length) {
     lines.push(`\n# About`);
-    about.paragraphs.forEach((paragraph, index) => lines.push(`${index + 1}. ${paragraph}`));
+    (about as any).paragraphs.forEach((paragraph: string, index: number) => lines.push(`${index + 1}. ${paragraph}`));
   }
 
   if (stats.length) {
     lines.push(`\n# Numbers`);
-    stats.forEach((stat) => lines.push(`${stat.label}: ${stat.value} ${stat.description ?? ""}`));
+    stats.forEach((stat: any) => lines.push(`${stat.label}: ${stat.value} ${stat.description ?? ""}`));
   }
 
   if (Object.keys(skillsByCategory).length) {
     lines.push(`\n# Skills`);
-    Object.entries(skillsByCategory).forEach(([category, names]) =>
+    Object.entries(skillsByCategory).forEach(([category, names]: [string, string[]]) =>
       lines.push(`${category}: ${names.join(", ")}`),
     );
   }
 
   if (services.length) {
     lines.push(`\n# Services`);
-    services.forEach((service) => lines.push(`${service.title} — ${service.description}`));
+    services.forEach((service: any) => lines.push(`${service.title} — ${service.description}`));
   }
 
   if (projects.length) {
     lines.push(`\n# Projects`);
-    projects.forEach((project) => {
+    projects.forEach((project: any) => {
       lines.push(
-        `- ${project.title} (${project.category}, ${project.techStack.join(", ")}): ${project.shortDescription}`,
+        `- ${project.title} (${project.category}, ${project.techStack?.join(", ") ?? ""}): ${project.shortDescription}`,
       );
       if (project.features?.length) {
         lines.push(`  Features: ${project.features.join("; ")}`);
@@ -98,7 +98,7 @@ async function buildGroundingContext(): Promise<string> {
 
   if (experience.length) {
     lines.push(`\n# Experience`);
-    experience.forEach((role) =>
+    experience.forEach((role: any) =>
       lines.push(
         `${role.role} at ${role.organization} (${role.startDate} – ${role.endDate || "present"}, ${role.status}): ${role.description}`,
       ),
@@ -107,14 +107,14 @@ async function buildGroundingContext(): Promise<string> {
 
   if (education.length) {
     lines.push(`\n# Education`);
-    education.forEach((item) =>
+    education.forEach((item: any) =>
       lines.push(`${item.degree} — ${item.institution} (${item.period}). ${item.description}`),
     );
   }
 
   if (certs.length) {
     lines.push(`\n# Certifications`);
-    certs.forEach((cert) => lines.push(`${cert.title} — ${cert.issuer}, ${cert.year}`));
+    certs.forEach((cert: any) => lines.push(`${cert.title} — ${cert.issuer}, ${cert.year}`));
   }
 
   return lines.join("\n");

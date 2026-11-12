@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { requireAdmin } from "../../middlewares/auth";
+import { requireAuth } from "../../middlewares/auth.middleware";
+import { requireRole } from "../../middlewares/role.middleware";
 import {
   createHero,
   deleteHero,
@@ -9,7 +10,7 @@ import {
 } from "./hero.controller";
 
 export const heroRouter = Router();
-heroRouter.use(requireAdmin);
+heroRouter.use(requireAuth, requireRole("admin"));
 
 heroRouter.get("/", listHero);
 heroRouter.post("/", createHero);

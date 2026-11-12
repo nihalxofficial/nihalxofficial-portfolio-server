@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { ContactMessageModel } from "./models";
+import { ContactMessageModel } from "./contact.model";
 import { ApiError } from "../../utils/apiError";
 import { parsePagination } from "../../utils/sendResponse";
 

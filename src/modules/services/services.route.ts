@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { requireAdmin } from "../../middlewares/auth";
+import { requireAuth } from "../../middlewares/auth.middleware";
+import { requireRole } from "../../middlewares/role.middleware";
 import {
   createService,
   deleteService,
@@ -9,7 +10,7 @@ import {
 } from "./services.controller";
 
 export const servicesRouter = Router();
-servicesRouter.use(requireAdmin);
+servicesRouter.use(requireAuth, requireRole("admin"));
 
 servicesRouter.get("/", listServices);
 servicesRouter.post("/", createService);

@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { TestimonialModel } from "./models";
+import { TestimonialModel } from "./testimonials.model";
 import { ApiError } from "../../utils/apiError";
 import { parsePagination } from "../../utils/sendResponse";
 

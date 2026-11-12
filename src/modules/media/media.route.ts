@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { requireAdmin } from "../../middlewares/auth";
+import { requireAuth } from "../../middlewares/auth.middleware";
+import { requireRole } from "../../middlewares/role.middleware";
 import {
   createMediaAsset,
   deleteMediaAsset,
@@ -9,7 +10,7 @@ import {
 } from "./media.controller";
 
 export const mediaRouter = Router();
-mediaRouter.use(requireAdmin);
+mediaRouter.use(requireAuth, requireRole("admin"));
 
 mediaRouter.get("/", listMedia);
 mediaRouter.post("/", createMediaAsset);

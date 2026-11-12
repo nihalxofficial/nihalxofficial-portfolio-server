@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { requireAdmin } from "../../middlewares/auth";
+import { requireAuth } from "../../middlewares/auth.middleware";
+import { requireRole } from "../../middlewares/role.middleware";
 import {
   createSkill,
   deleteSkill,
@@ -9,7 +10,7 @@ import {
 } from "./skills.controller";
 
 export const skillsRouter = Router();
-skillsRouter.use(requireAdmin);
+skillsRouter.use(requireAuth, requireRole("admin"));
 
 skillsRouter.get("/", listSkills);
 skillsRouter.post("/", createSkill);

@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { requireAdmin } from "../../middlewares/auth";
+import { requireAuth } from "../../middlewares/auth.middleware";
+import { requireRole } from "../../middlewares/role.middleware";
 import {
   createNavigationItem,
   deleteNavigationItem,
@@ -9,7 +10,7 @@ import {
 } from "./navigation.controller";
 
 export const navigationRouter = Router();
-navigationRouter.use(requireAdmin);
+navigationRouter.use(requireAuth, requireRole("admin"));
 
 navigationRouter.get("/", listNavigation);
 navigationRouter.post("/", createNavigationItem);

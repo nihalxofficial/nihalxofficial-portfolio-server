@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { NavigationModel } from "./models";
+import { NavigationModel } from "./navigation.model";
 import { ApiError } from "../../utils/apiError";
 import { parsePagination } from "../../utils/sendResponse";
 

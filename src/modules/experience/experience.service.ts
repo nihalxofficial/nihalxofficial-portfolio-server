@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { ExperienceModel } from "./models";
+import { ExperienceModel } from "./experience.model";
 import { ApiError } from "../../utils/apiError";
 import { parsePagination } from "../../utils/sendResponse";
 

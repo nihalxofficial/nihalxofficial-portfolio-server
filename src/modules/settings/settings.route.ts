@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { requireAdmin } from "../../middlewares/auth";
+import { requireAuth } from "../../middlewares/auth.middleware";
+import { requireRole } from "../../middlewares/role.middleware";
 import {
   createSettings,
   deleteSettings,
@@ -9,7 +10,7 @@ import {
 } from "./settings.controller";
 
 export const settingsRouter = Router();
-settingsRouter.use(requireAdmin);
+settingsRouter.use(requireAuth, requireRole("admin"));
 
 settingsRouter.get("/", listSettings);
 settingsRouter.post("/", createSettings);

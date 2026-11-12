@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { requireAdmin } from "../../middlewares/auth";
+import { requireAuth } from "../../middlewares/auth.middleware";
+import { requireRole } from "../../middlewares/role.middleware";
 import { analyticsLimiter } from "../../middlewares/rateLimit";
 import { validate } from "../../middlewares/validate";
 import {
@@ -16,7 +17,7 @@ analyticsPublicRouter.post("/", analyticsLimiter, validate({ body: trackVisitSch
 
 // Admin — mounted under /api/v1/admin/analytics.
 export const analyticsAdminRouter = Router();
-analyticsAdminRouter.use(requireAdmin);
+analyticsAdminRouter.use(requireAuth, requireRole("admin"));
 analyticsAdminRouter.get("/overview", validate({ query: analyticsQuerySchema }), analyticsOverview);
 analyticsAdminRouter.get("/realtime", analyticsRealtime);
 analyticsAdminRouter.get("/projects", validate({ query: analyticsQuerySchema }), analyticsProjects);

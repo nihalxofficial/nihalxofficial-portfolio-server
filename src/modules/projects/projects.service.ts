@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { ProjectModel } from "./models";
+import { ProjectModel } from "./projects.model";
 import { ApiError } from "../../utils/apiError";
 import { parsePagination } from "../../utils/sendResponse";
 

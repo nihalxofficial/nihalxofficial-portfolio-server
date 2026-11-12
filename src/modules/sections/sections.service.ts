@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { SectionModel } from "./models";
+import { SectionModel } from "./sections.model";
 import { ApiError } from "../../utils/apiError";
 import { parsePagination } from "../../utils/sendResponse";
 

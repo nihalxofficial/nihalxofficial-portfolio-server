@@ -19,17 +19,14 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce.number().int().positive().default(5000),
   FRONTEND_URL: z.string().default("http://localhost:3000"),
+  CLIENT_URL: z.string().default("http://localhost:3000"),
 
   MONGODB_URI: z.string().min(1, "MONGODB_URI is required"),
   // Overrides the database name inside the URI (the URI often omits it).
   MONGODB_DATABASE: z.string().default("portfolio"),
 
   ADMIN_UIDS: z.string().default(""),
-
-  FIREBASE_PROJECT_ID: z.string().optional(),
-  FIREBASE_CLIENT_EMAIL: z.string().optional(),
-  FIREBASE_PRIVATE_KEY: z.string().optional(),
-  GOOGLE_APPLICATION_CREDENTIALS: z.string().optional(),
+  ADMIN_EMAILS: z.string().default("mdnihaluddinbijoy@gmail.com"),
 
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default("gemini-3.5-flash-lite"),
@@ -81,9 +78,12 @@ export const env = {
   adminUids: raw.ADMIN_UIDS.split(",")
     .map((uid) => uid.trim())
     .filter(Boolean),
-  firebasePrivateKey: raw.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+  adminEmails: raw.ADMIN_EMAILS.split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean),
   corsOrigins: raw.FRONTEND_URL.split(",")
     .map((origin) => origin.trim())
+    .concat(["http://localhost:3000", "http://127.0.0.1:3000"])
     .filter(Boolean),
   smtpConfigured: Boolean(raw.SMTP_HOST && raw.SMTP_USER && raw.SMTP_PASSWORD),
   emailFrom: raw.SMTP_FROM || raw.SMTP_USER || "no-reply@localhost",

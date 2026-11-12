@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { ServiceModel } from "./models";
+import { ServiceModel } from "./services.model";
 import { ApiError } from "../../utils/apiError";
 import { parsePagination } from "../../utils/sendResponse";
 

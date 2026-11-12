@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { requireAdmin } from "../../middlewares/auth";
+import { requireAuth } from "../../middlewares/auth.middleware";
+import { requireRole } from "../../middlewares/role.middleware";
 import {
   createAbout,
   deleteAbout,
@@ -9,7 +10,7 @@ import {
 } from "./about.controller";
 
 export const aboutRouter = Router();
-aboutRouter.use(requireAdmin);
+aboutRouter.use(requireAuth, requireRole("admin"));
 
 aboutRouter.get("/", listAbout);
 aboutRouter.post("/", createAbout);

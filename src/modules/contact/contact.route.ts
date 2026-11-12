@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { requireAdmin } from "../../middlewares/auth";
+import { requireAuth } from "../../middlewares/auth.middleware";
+import { requireRole } from "../../middlewares/role.middleware";
 import {
   createContactMessage,
   deleteContactMessage,
@@ -9,7 +10,7 @@ import {
 } from "./contact.controller";
 
 export const contactRouter = Router();
-contactRouter.use(requireAdmin);
+contactRouter.use(requireAuth, requireRole("admin"));
 
 contactRouter.get("/", listContactMessages);
 contactRouter.post("/", createContactMessage);

@@ -14,10 +14,10 @@
  */
 import mongoose from "mongoose";
 import { connectDatabase, disconnectDatabase } from "../config/db";
-import { ExperienceModel } from "../modules/experience/models";
-import { NavigationModel } from "../modules/navigation/models";
-import { SectionModel } from "../modules/sections/models";
-import { StatisticModel } from "../modules/statistics/models";
+import { ExperienceModel } from "../modules/experience/experience.model";
+import { NavigationModel } from "../modules/navigation/navigation.model";
+import { SectionModel } from "../modules/sections/sections.model";
+import { StatisticModel } from "../modules/statistics/statistics.model";
 
 /** Cards the owner does not want on the Numbers Speak shelf. */
 const DROPPED_STATS = ["Technologies Mastered", "Internship"];

@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { requireAdmin } from "../../middlewares/auth";
+import { requireAuth } from "../../middlewares/auth.middleware";
+import { requireRole } from "../../middlewares/role.middleware";
 import {
   createExperience,
   deleteExperience,
@@ -9,7 +10,7 @@ import {
 } from "./experience.controller";
 
 export const experienceRouter = Router();
-experienceRouter.use(requireAdmin);
+experienceRouter.use(requireAuth, requireRole("admin"));
 
 experienceRouter.get("/", listExperience);
 experienceRouter.post("/", createExperience);

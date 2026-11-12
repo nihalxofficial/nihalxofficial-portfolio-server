@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { requireAdmin } from "../../middlewares/auth";
+import { requireAuth } from "../../middlewares/auth.middleware";
+import { requireRole } from "../../middlewares/role.middleware";
 import {
   createStatistic,
   deleteStatistic,
@@ -9,7 +10,7 @@ import {
 } from "./statistics.controller";
 
 export const statisticsRouter = Router();
-statisticsRouter.use(requireAdmin);
+statisticsRouter.use(requireAuth, requireRole("admin"));
 
 statisticsRouter.get("/", listStatistics);
 statisticsRouter.post("/", createStatistic);

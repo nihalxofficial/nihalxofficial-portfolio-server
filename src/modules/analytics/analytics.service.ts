@@ -1,6 +1,6 @@
 import type { Request } from "express";
-import { ProjectModel } from "../projects/models";
-import { VisitModel } from "./models";
+import { ProjectModel } from "../projects/projects.model";
+import { VisitModel } from "./analytics.model";
 import { resolveGeo } from "../../utils/geo";
 import { parseUserAgent } from "../../utils/userAgent";
 import type { TrackVisitInput } from "./analytics.validator";
@@ -523,7 +523,7 @@ export async function getProjectAnalytics(days: number): Promise<ProjectAnalytic
 
   const baselineHomeViews = Math.max(homeViews, 1);
 
-  const metrics: ProjectPerformanceMetric[] = allProjects.map((p) => {
+  const metrics: ProjectPerformanceMetric[] = (allProjects as any[]).map((p: any) => {
     const slug = (p.slug || "").toLowerCase();
     const v = viewsMap.get(slug) ?? { views: 0, uniqueVisitors: 0 };
     const clicks = clicksMap.get(slug) ?? 0;

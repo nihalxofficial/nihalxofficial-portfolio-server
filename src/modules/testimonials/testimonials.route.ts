@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { requireAdmin } from "../../middlewares/auth";
+import { requireAuth } from "../../middlewares/auth.middleware";
+import { requireRole } from "../../middlewares/role.middleware";
 import {
   createTestimonial,
   deleteTestimonial,
@@ -9,7 +10,7 @@ import {
 } from "./testimonials.controller";
 
 export const testimonialsRouter = Router();
-testimonialsRouter.use(requireAdmin);
+testimonialsRouter.use(requireAuth, requireRole("admin"));
 
 testimonialsRouter.get("/", listTestimonials);
 testimonialsRouter.post("/", createTestimonial);

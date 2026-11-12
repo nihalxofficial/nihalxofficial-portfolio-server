@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { SiteSettingsModel } from "./models";
+import { SiteSettingsModel } from "./settings.model";
 import { ApiError } from "../../utils/apiError";
 import { parsePagination } from "../../utils/sendResponse";
 

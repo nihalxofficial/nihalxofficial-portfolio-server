@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { requireAdmin } from "../../middlewares/auth";
+import { requireAuth } from "../../middlewares/auth.middleware";
+import { requireRole } from "../../middlewares/role.middleware";
 import {
   createPost,
   deletePost,
@@ -9,7 +10,7 @@ import {
 } from "./posts.controller";
 
 export const postsRouter = Router();
-postsRouter.use(requireAdmin);
+postsRouter.use(requireAuth, requireRole("admin"));
 
 postsRouter.get("/", listPosts);
 postsRouter.post("/", createPost);

@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { CertificationModel } from "./models";
+import { CertificationModel } from "./certifications.model";
 import { ApiError } from "../../utils/apiError";
 import { parsePagination } from "../../utils/sendResponse";
 

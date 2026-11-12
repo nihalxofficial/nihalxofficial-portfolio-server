@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { MediaAssetModel } from "./models";
+import { MediaAssetModel } from "./media.model";
 import { ApiError } from "../../utils/apiError";
 import { parsePagination } from "../../utils/sendResponse";
 
