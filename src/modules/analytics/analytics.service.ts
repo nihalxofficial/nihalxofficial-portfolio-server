@@ -1,5 +1,6 @@
 import type { Request } from "express";
-import { ProjectModel, VisitModel } from "../../models";
+import { ProjectModel } from "../admin/models";
+import { VisitModel } from "./models";
 import { resolveGeo } from "../../utils/geo";
 import { parseUserAgent } from "../../utils/userAgent";
 import type { TrackVisitInput } from "./analytics.validator";

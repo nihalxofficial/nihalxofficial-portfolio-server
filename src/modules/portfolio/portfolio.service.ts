@@ -13,7 +13,7 @@ import {
   SkillModel,
   StatisticModel,
   TestimonialModel,
-} from "../../models";
+} from "../admin/models";
 
 export interface SkillGroup {
   category: string;
@@ -69,9 +69,9 @@ export async function getPortfolioContent() {
     group.skills.push({
       id: String(skill._id),
       name: skill.name,
-      icon: skill.icon,
-      brandColor: skill.brandColor,
-      proficiency: skill.proficiency,
+      icon: skill.icon ?? "",
+      brandColor: skill.brandColor ?? "",
+      proficiency: skill.proficiency ?? "",
     });
   }
 

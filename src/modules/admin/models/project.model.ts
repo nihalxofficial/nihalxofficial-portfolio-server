@@ -31,7 +31,6 @@ const projectSchema = new Schema(
   { timestamps: true, versionKey: false },
 );
 
-// Public listing: published + newest first, cheap to sort.
 projectSchema.index({ isPublished: 1, order: 1, createdAt: -1 });
 projectSchema.index({ title: "text", shortDescription: "text", techStack: "text" });
 

@@ -25,7 +25,7 @@ import {
   SkillModel,
   StatisticModel,
   TestimonialModel,
-} from "../models";
+} from "../modules/admin/models";
 
 const showcase = (slug: string) => `/project-images/showcase/${slug}.png`;
 

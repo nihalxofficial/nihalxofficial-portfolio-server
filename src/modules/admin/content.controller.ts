@@ -2,14 +2,33 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { ApiError } from "../../utils/apiError";
 import { buildPaginationMeta, sendResponse } from "../../utils/sendResponse";
-import { ENTITY_KEYS, getEntity } from "./content.registry";
+import {
+  AboutModel,
+  BlogPostModel,
+  CertificationModel,
+  ContactMessageModel,
+  EducationModel,
+  ExperienceModel,
+  HeroModel,
+  MediaAssetModel,
+  NavigationModel,
+  ProjectModel,
+  SectionModel,
+  ServiceModel,
+  SiteSettingsModel,
+  SkillModel,
+  StatisticModel,
+  TestimonialModel,
+} from "./models";
 import {
   createContent,
   getContent,
   getOverview,
+  getSingleton,
   listContent,
   removeContent,
   updateContent,
+  updateSingleton,
 } from "./content.service";
 
 const listQuerySchema = z.object({
@@ -19,78 +38,109 @@ const listQuerySchema = z.object({
   sort: z.string().trim().max(120).optional(),
 });
 
-const entityParamSchema = z.object({
-  entity: z.enum(ENTITY_KEYS as [string, ...string[]]),
-});
+// Map entity keys to their Mongoose models (no central registry)
+const ENTITY_MODELS: Record<string, any> = {
+  hero: HeroModel,
+  about: AboutModel,
+  statistics: StatisticModel,
+  services: ServiceModel,
+  testimonials: TestimonialModel,
+  navigation: NavigationModel,
+  sections: SectionModel,
+  settings: SiteSettingsModel,
+  projects: ProjectModel,
+  posts: BlogPostModel,
+  certifications: CertificationModel,
+  education: EducationModel,
+  experience: ExperienceModel,
+  skills: SkillModel,
+};
 
-const idParamSchema = entityParamSchema.extend({
-  id: z.string().trim().min(1),
-});
+// Singleton entities (single document, upsert instead of create)
+const SINGLETONS = new Set(["hero", "about", "settings", "sections"]);
 
-function resolve(entityKey: string) {
-  const entity = getEntity(entityKey);
-  if (!entity) throw ApiError.notFound(`Unknown content type "${entityKey}"`);
-  return entity;
+// Entity labels for user-facing messages
+const ENTITY_LABELS: Record<string, string> = {
+  hero: "Hero section",
+  about: "About section",
+  statistics: "Statistics",
+  services: "Services",
+  testimonials: "Testimonials",
+  navigation: "Navigation",
+  sections: "Sections",
+  settings: "Site settings",
+  projects: "Projects",
+  posts: "Blog posts",
+  certifications: "Certifications",
+  education: "Education",
+  experience: "Experience",
+  skills: "Skills",
+};
+
+function resolveModel(entityKey: string) {
+  const model = ENTITY_MODELS[entityKey];
+  if (!model) throw ApiError.notFound(`Unknown content type "${entityKey}"`);
+  return model;
 }
 
 /** The dashboard fetches this once to build every form and table. */
 export function describeEntities(_req: Request, res: Response) {
   return sendResponse(res, 200, {
     message: "Content types",
-    data: ENTITY_KEYS.map((key) => {
-      const entity = resolve(key);
-      return {
-        key: entity.key,
-        label: entity.label,
-        singleton: Boolean(entity.singleton),
-        titleField: entity.titleField,
-        fields: entity.fields,
-      };
-    }),
+    data: Object.keys(ENTITY_MODELS).map((key) => ({
+      key,
+      label: ENTITY_LABELS[key] || key,
+      singleton: SINGLETONS.has(key),
+    })),
   });
 }
 
 export async function listEntity(req: Request, res: Response) {
-  const entity = resolve(String(req.params.entity));
+  const model = resolveModel(String(req.params.entity));
   const query = listQuerySchema.parse(req.query);
-  const { items, meta } = await listContent(entity, query);
+  const { items, meta } = await listContent(model, query);
 
   return sendResponse(res, 200, {
-    message: `${entity.label} loaded`,
+    message: "Content loaded",
     data: items,
     meta: buildPaginationMeta(meta.page, meta.limit, meta.total),
   });
 }
 
 export async function readEntity(req: Request, res: Response) {
-  const entity = resolve(String(req.params.entity));
-  const data = await getContent(entity, String(req.params.id ?? ""));
+  const model = resolveModel(String(req.params.entity));
+  const data = await getContent(model, String(req.params.id ?? ""));
 
-  return sendResponse(res, 200, { message: `${entity.label} loaded`, data });
+  return sendResponse(res, 200, { message: "Content loaded", data });
 }
 
 export async function createEntity(req: Request, res: Response) {
-  const entity = resolve(String(req.params.entity));
-  const data = await createContent(entity, req.body);
+  const model = resolveModel(String(req.params.entity));
+  const data = SINGLETONS.has(String(req.params.entity))
+    ? await updateSingleton(model, req.body)
+    : await createContent(model, req.body);
 
   return sendResponse(res, 201, {
-    message: entity.singleton ? `${entity.label} saved` : `${entity.label} record created`,
+    message: "Content saved",
     data,
   });
 }
 
 export async function patchEntity(req: Request, res: Response) {
-  const entity = resolve(String(req.params.entity));
-  const data = await updateContent(entity, String(req.params.id ?? ""), req.body);
+  const model = resolveModel(String(req.params.entity));
+  const key = String(req.params.entity);
+  const data = SINGLETONS.has(key)
+    ? await updateSingleton(model, req.body)
+    : await updateContent(model, String(req.params.id ?? ""), req.body);
 
-  return sendResponse(res, 200, { message: `${entity.label} updated`, data });
+  return sendResponse(res, 200, { message: "Content updated", data });
 }
 
 export async function deleteEntity(req: Request, res: Response) {
-  const entity = resolve(String(req.params.entity));
-  const data = await removeContent(entity, String(req.params.id ?? ""));
+  const model = resolveModel(String(req.params.entity));
+  const data = await removeContent(model, String(req.params.id ?? ""));
 
-  return sendResponse(res, 200, { message: `${entity.label} record deleted`, data });
+  return sendResponse(res, 200, { message: "Content deleted", data });
 }
 
 export async function overview(_req: Request, res: Response) {
@@ -98,4 +148,4 @@ export async function overview(_req: Request, res: Response) {
   return sendResponse(res, 200, { message: "Dashboard overview", data });
 }
 
-export const adminParams = { entityParamSchema, idParamSchema };
+export const adminParams = { listQuerySchema };

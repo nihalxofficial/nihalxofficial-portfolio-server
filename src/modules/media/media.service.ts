@@ -1,5 +1,5 @@
 import { env } from "../../config/env";
-import { MediaAssetModel } from "../../models";
+import { MediaAssetModel } from "./models";
 import { ApiError } from "../../utils/apiError";
 import { buildPaginationMeta, type PaginationMeta } from "../../utils/sendResponse";
 

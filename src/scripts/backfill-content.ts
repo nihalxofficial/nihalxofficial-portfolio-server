@@ -19,7 +19,7 @@ import {
   NavigationModel,
   SectionModel,
   StatisticModel,
-} from "../models";
+} from "../modules/admin/models";
 
 /** Cards the owner does not want on the Numbers Speak shelf. */
 const DROPPED_STATS = ["Technologies Mastered", "Internship"];

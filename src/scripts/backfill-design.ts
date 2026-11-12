@@ -15,7 +15,7 @@ import {
   NavigationModel,
   SectionModel,
   SiteSettingsModel,
-} from "../models";
+} from "../modules/admin/models";
 
 /** Same icon map the header pill falls back to, keyed by anchor target. */
 const ICON_BY_TARGET: Record<string, string> = {

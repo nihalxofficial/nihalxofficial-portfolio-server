@@ -12,7 +12,7 @@ import {
   SiteSettingsModel,
   SkillModel,
   StatisticModel,
-} from "../../models";
+} from "../admin/models";
 import type { ChatMessage } from "./ai.validator";
 
 export { isAssistantConfigured } from "./ai.client";

@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
 import { env } from "../../config/env";
-import { ContactMessageModel, SiteSettingsModel } from "../../models";
+import { ContactMessageModel } from "./models";
+import { SiteSettingsModel } from "../admin/models";
 import { ApiError } from "../../utils/apiError";
 import {
   buildPaginationMeta,
