@@ -93,9 +93,7 @@ function shapeFromRecord(base: AuthUser, record: any): AuthUser {
     .filter(Boolean);
 
   const email = (record?.email || base.email || "").toLowerCase();
-  const isAdmin =
-    adminEmails.includes(email) ||
-    (env.adminUids.length > 0 && env.adminUids.includes(base.id));
+  const isAdmin = adminEmails.includes(email);
 
   let roles: string[] = Array.isArray(record?.roles)
     ? record.roles.filter((val: unknown): val is string => typeof val === "string")

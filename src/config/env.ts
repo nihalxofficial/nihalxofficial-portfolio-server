@@ -25,7 +25,6 @@ const envSchema = z.object({
   // Overrides the database name inside the URI (the URI often omits it).
   MONGODB_DATABASE: z.string().default("portfolio"),
 
-  ADMIN_UIDS: z.string().default(""),
   ADMIN_EMAILS: z.string().default("mdnihaluddinbijoy@gmail.com"),
 
   GEMINI_API_KEY: z.string().optional(),
@@ -75,9 +74,6 @@ const raw = parsed.data;
 export const env = {
   ...raw,
   isProduction: raw.NODE_ENV === "production",
-  adminUids: raw.ADMIN_UIDS.split(",")
-    .map((uid) => uid.trim())
-    .filter(Boolean),
   adminEmails: raw.ADMIN_EMAILS.split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean),
