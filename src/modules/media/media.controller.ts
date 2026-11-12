@@ -1,39 +1,59 @@
 import type { Request, Response } from "express";
-import { z } from "zod";
-import { ApiError } from "../../utils/apiError";
+import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
-import { MediaAssetModel } from "./media.model";
-import { createContent, getContent, listContent, removeContent, updateContent } from "./media.service";
+import { deleteMedia, listMedia, uploadBase64, uploadFromUrl } from "./media.service";
+import type { UploadFromUrlInput } from "./media.validator";
 
-const listQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).optional(),
-  limit: z.coerce.number().int().min(1).max(100).optional(),
-  q: z.string().trim().max(120).optional(),
-  sort: z.string().trim().max(120).optional(),
+export const listImages = catchAsync(async (req: Request, res: Response) => {
+  const folder = typeof req.query.folder === "string" ? req.query.folder : undefined;
+  const search = typeof req.query.search === "string" ? req.query.search : undefined;
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(60, Math.max(1, Number(req.query.limit) || 24));
+
+  const { items, meta } = await listMedia({
+    folder,
+    search,
+    page,
+    limit,
+    skip: (page - 1) * limit,
+  });
+
+  return sendResponse(res, 200, {
+    message: "Media loaded",
+    data: items,
+    meta,
+  });
 });
 
-export async function listMedia(req: Request, res: Response) {
-  const query = listQuerySchema.parse(req.query);
-  const { items, meta } = await listContent(MediaAssetModel, query);
-  return sendResponse(res, 200, { message: "Media loaded", data: items, meta });
-}
+export const uploadImage = catchAsync(async (req: Request, res: Response) => {
+  const asset = await uploadBase64({
+    ...req.body,
+    uploadedBy: (req.user as any)?.email ?? "",
+  });
 
-export async function readMediaAsset(req: Request, res: Response) {
-  const data = await getContent(MediaAssetModel, String(req.params.id ?? ""));
-  return sendResponse(res, 200, { message: "Media loaded", data });
-}
+  return sendResponse(res, 201, {
+    message: "Image uploaded",
+    data: asset,
+  });
+});
 
-export async function createMediaAsset(req: Request, res: Response) {
-  const data = await createContent(MediaAssetModel, req.body);
-  return sendResponse(res, 201, { message: "Media created", data });
-}
+export const uploadImageFromUrl = catchAsync(async (req: Request, res: Response) => {
+  const input = req.body as UploadFromUrlInput;
+  const asset = await uploadFromUrl({
+    ...input,
+    uploadedBy: (req.user as any)?.email ?? "",
+  });
 
-export async function updateMediaAsset(req: Request, res: Response) {
-  const data = await updateContent(MediaAssetModel, String(req.params.id ?? ""), req.body);
-  return sendResponse(res, 200, { message: "Media updated", data });
-}
+  return sendResponse(res, 201, {
+    message: "Image imported",
+    data: asset,
+  });
+});
 
-export async function deleteMediaAsset(req: Request, res: Response) {
-  const data = await removeContent(MediaAssetModel, String(req.params.id ?? ""));
-  return sendResponse(res, 200, { message: "Media deleted", data });
-}
+export const removeImage = catchAsync(async (req: Request, res: Response) => {
+  const result = await deleteMedia(String(req.params.id));
+  return sendResponse(res, 200, {
+    message: "Image deleted",
+    data: result,
+  });
+});

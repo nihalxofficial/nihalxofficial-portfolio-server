@@ -1,127 +1,268 @@
-import { Types } from "mongoose";
+import mongoose from "mongoose";
+import nodemailer from "nodemailer";
+import { env } from "../../config/env";
 import { ContactMessageModel } from "./contact.model";
+import { SiteSettingsModel } from "../settings/settings.model";
 import { ApiError } from "../../utils/apiError";
-import { parsePagination } from "../../utils/sendResponse";
+import {
+  buildPaginationMeta,
+  type PaginationMeta,
+} from "../../utils/sendResponse";
+import { newMessageEmail, replyEmail } from "./email.template";
+import type { ContactReplyInput, CreateContactInput } from "./contact.validator";
 
-export interface ListContentOptions {
-  page?: unknown;
-  limit?: unknown;
-  q?: unknown;
-  sort?: unknown;
+let transporter: nodemailer.Transporter | null = null;
+
+function getTransporter(): nodemailer.Transporter | null {
+  if (!env.smtpConfigured) return null;
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      host: env.SMTP_HOST,
+      port: env.SMTP_PORT,
+      secure: env.SMTP_SECURE,
+      auth: { user: env.SMTP_USER as string, pass: env.SMTP_PASSWORD as string },
+      connectionTimeout: 15_000,
+      greetingTimeout: 15_000,
+      socketTimeout: 20_000,
+    });
+  }
+  return transporter;
 }
 
-export interface ListContentResult {
-  items: Record<string, unknown>[];
-  meta: { page: number; limit: number; total: number; totalPages: number };
-}
-
-function escapeRegex(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+export async function verifySmtp(): Promise<boolean> {
+  const mailer = getTransporter();
+  if (!mailer) return false;
+  try {
+    await mailer.verify();
+    return true;
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error("[contact] SMTP verification failed:", (error as Error).message);
+    return false;
+  }
 }
 
 function assertObjectId(id: string) {
-  if (!Types.ObjectId.isValid(id)) throw ApiError.badRequest("Invalid identifier");
+  if (!mongoose.isValidObjectId(id)) throw ApiError.badRequest("Invalid message id");
 }
 
-export async function listContent(
-  model: any,
-  options: ListContentOptions = {},
-): Promise<ListContentResult> {
-  const { page, limit, skip } = parsePagination(options as Record<string, unknown>, {
-    page: 1,
-    limit: 24,
-  });
-
-  const filter: Record<string, unknown> = {};
-  const query = typeof options.q === "string" ? options.q.trim() : "";
-
-  if (query) {
-    const pattern = new RegExp(escapeRegex(query), "i");
-    filter.$or = [
-      { title: pattern },
-      { name: pattern },
-      { label: pattern },
-      { slug: pattern },
-      { role: pattern },
-      { organization: pattern },
-      { degree: pattern },
-      { issuer: pattern },
-      { category: pattern },
-      { techStack: { $in: [pattern] } },
-      { features: { $in: [pattern] } },
-      { skills: { $in: [pattern] } },
-      { tags: { $in: [pattern] } },
-    ];
-  }
-
-  const defaultSort: Record<string, 1 | -1> = { order: 1, createdAt: -1 };
-  const sort = options.sort
-    ? (() => {
-        const parsed: Record<string, 1 | -1> = {};
-        const allowed = new Set([
-          "title", "name", "label", "slug", "role", "organization",
-          "degree", "issuer", "category", "order", "createdAt", "updatedAt",
-        ]);
-        for (const token of String(options.sort).split(",")) {
-          const raw = token.trim();
-          if (!raw) continue;
-          const field = raw.startsWith("-") ? raw.slice(1) : raw;
-          if (!allowed.has(field)) continue;
-          parsed[field] = raw.startsWith("-") ? -1 : 1;
-        }
-        return Object.keys(parsed).length > 0 ? parsed : defaultSort;
-      })()
-    : defaultSort;
-
-  const [items, total] = await Promise.all([
-    model.find(filter).sort(sort).skip(skip).limit(limit).lean(),
-    model.countDocuments(filter),
-  ]);
-
+async function emailBrand() {
+  const settings = await SiteSettingsModel.findOne().lean();
   return {
-    items: items as Record<string, unknown>[],
-    meta: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+    brand: settings?.branding?.wordmark || settings?.siteName || "portfolio",
+    siteName: settings?.siteName || "",
+    siteUrl: settings?.siteUrl || "",
   };
 }
 
-export async function getContent(model: any, id: string) {
+export async function createContactMessage(input: CreateContactInput, userAgent: string) {
+  const message = await ContactMessageModel.create({
+    name: input.name,
+    email: input.email,
+    subject: input.subject || "Portfolio inquiry",
+    message: input.message,
+    location: input.location ?? "",
+    userAgent: userAgent.slice(0, 300),
+  });
+
+  const mailer = getTransporter();
+  if (mailer && env.contactReceiver) {
+    const brand = await emailBrand();
+    const mail = newMessageEmail({
+      name: input.name,
+      email: input.email,
+      subject: input.subject || "Portfolio inquiry",
+      message: input.message,
+      location: input.location,
+      receivedAt: message.createdAt?.toLocaleString("en-GB", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }),
+      dashboardUrl: brand.siteUrl ? `${brand.siteUrl.replace(/\/$/, "")}/control-centre/messages` : "",
+      brand: brand.brand,
+    });
+
+    try {
+      await mailer.sendMail({
+        from: `"Portfolio Contact" <${env.emailFrom}>`,
+        to: env.contactReceiver,
+        replyTo: input.email,
+        subject: mail.subject,
+        text: mail.text,
+        html: mail.html,
+      });
+      message.emailDelivered = true;
+      await message.save();
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("[contact] email delivery failed:", (error as Error).message);
+    }
+  }
+
+  return message;
+}
+
+const SORT_MAP: Record<string, { field: string; dir: "asc" | "desc" }> = {
+  newest: { field: "createdAt", dir: "desc" },
+  oldest: { field: "createdAt", dir: "asc" },
+  name: { field: "name", dir: "asc" },
+  email: { field: "email", dir: "asc" },
+  subject: { field: "subject", dir: "asc" },
+  status: { field: "status", dir: "asc" },
+  updated: { field: "updatedAt", dir: "desc" },
+};
+
+export interface ListMessagesParams {
+  status?: string;
+  search?: string;
+  sort?: string;
+  dir?: string;
+  from?: Date;
+  to?: Date;
+  delivery?: string;
+  page: number;
+  limit: number;
+  skip: number;
+}
+
+export async function listContactMessages(params: ListMessagesParams): Promise<{
+  items: unknown[];
+  meta: PaginationMeta;
+  unreadCount: number;
+}> {
+  const filter: Record<string, unknown> = {};
+
+  if (params.status && params.status !== "all") filter.status = params.status;
+
+  if (params.delivery === "failed") filter.emailDelivered = false;
+  if (params.delivery === "delivered") filter.emailDelivered = true;
+
+  if (params.from || params.to) {
+    const range: Record<string, Date> = {};
+    if (params.from) range.$gte = params.from;
+    if (params.to) range.$lte = params.to;
+    filter.createdAt = range;
+  }
+
+  if (params.search) {
+    const term = new RegExp(params.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+    filter.$or = [{ name: term }, { email: term }, { subject: term }, { message: term }];
+  }
+
+  const column = SORT_MAP[params.sort ?? ""] ?? SORT_MAP.newest;
+  const ascending = params.dir
+    ? params.dir === "asc"
+    : column.dir === "asc";
+  const sort: Record<string, 1 | -1> = { [column.field]: ascending ? 1 : -1 };
+  const alphabetical = ["name", "email", "subject"].includes(column.field);
+
+  const query = ContactMessageModel.find(filter)
+    .select("-userAgent")
+    .sort(sort)
+    .skip(params.skip)
+    .limit(params.limit);
+
+  if (alphabetical) query.collation({ locale: "en", strength: 2 });
+
+  const [items, total, unreadCount] = await Promise.all([
+    query.lean(),
+    ContactMessageModel.countDocuments(filter),
+    ContactMessageModel.countDocuments({ status: "unread" }),
+  ]);
+
+  return {
+    items,
+    meta: buildPaginationMeta(params.page, params.limit, total),
+    unreadCount,
+  };
+}
+
+export async function getContactMessage(id: string) {
   assertObjectId(id);
-  const doc = await model.findById(id).lean();
-  if (!doc) throw ApiError.notFound("Record not found");
-  return doc as Record<string, unknown>;
+
+  const current = await ContactMessageModel.findById(id).lean();
+  if (!current) throw ApiError.notFound("Message not found");
+
+  if (current.status !== "unread") return current;
+
+  return (
+    (await ContactMessageModel.findByIdAndUpdate(id, { status: "read" }, { new: true }).lean()) ??
+    current
+  );
 }
 
-export async function createContent(model: any, payload: Record<string, unknown>) {
-  const created = await model.create(payload);
-  return created.toObject() as Record<string, unknown>;
-}
-
-export async function updateContent(
-  model: any,
-  id: string,
-  payload: Record<string, unknown>,
-) {
+export async function updateContactStatus(id: string, status: string) {
   assertObjectId(id);
-  const { _id, ...updateData } = payload;
-  if (Object.keys(updateData).length === 0) throw ApiError.badRequest("No valid fields to update");
 
-  const doc = await model
-    .findByIdAndUpdate(id, { $set: updateData }, { new: true, runValidators: true })
-    .lean();
-  if (!doc) throw ApiError.notFound("Record not found");
-  return doc as Record<string, unknown>;
+  const updated = await ContactMessageModel.findByIdAndUpdate(
+    id,
+    { status },
+    { new: true, runValidators: true },
+  ).lean();
+
+  if (!updated) throw ApiError.notFound("Message not found");
+  return updated;
 }
 
-export async function removeContent(model: any, id: string) {
+export async function deleteContactMessage(id: string) {
   assertObjectId(id);
-  const doc = await model.findByIdAndDelete(id).lean();
-  if (!doc) throw ApiError.notFound("Record not found");
-  return { id };
+
+  const deleted = await ContactMessageModel.findByIdAndDelete(id).lean();
+  if (!deleted) throw ApiError.notFound("Message not found");
+  return deleted;
 }
 
-export async function updateSingleton(model: any, payload: Record<string, unknown>) {
-  const doc = await model
-    .findOneAndUpdate({}, { $set: payload }, { new: true, upsert: true, setDefaultsOnInsert: true })
-    .lean();
-  return doc as Record<string, unknown>;
+export async function replyToContactMessage(id: string, input: ContactReplyInput) {
+  assertObjectId(id);
+
+  const mailer = getTransporter();
+  if (!mailer) {
+    throw ApiError.serviceUnavailable(
+      "Email delivery is not configured — set SMTP_HOST, SMTP_USER and SMTP_PASSWORD on the server first.",
+    );
+  }
+
+  const message = await ContactMessageModel.findById(id);
+  if (!message) throw ApiError.notFound("Message not found");
+
+  const brand = await emailBrand();
+  const mail = replyEmail({
+    to: input.to,
+    name: message.name,
+    subject: input.subject,
+    body: input.body,
+    originalMessage: message.message,
+    siteName: brand.siteName,
+    siteUrl: brand.siteUrl,
+    brand: brand.brand,
+  });
+
+  const cc = input.ccOwner && env.contactReceiver && env.contactReceiver !== input.to
+    ? env.contactReceiver
+    : undefined;
+
+  try {
+    await mailer.sendMail({
+      from: `"${brand.siteName || "Portfolio"}" <${env.emailFrom}>`,
+      to: input.to,
+      ...(cc ? { cc } : {}),
+      replyTo: env.contactReceiver || env.emailFrom,
+      subject: mail.subject,
+      text: mail.text,
+      html: mail.html,
+    });
+  } catch (error) {
+    throw ApiError.badGateway(`The mail provider rejected this reply: ${(error as Error).message}`);
+  }
+
+  message.replies.push({
+    to: input.to,
+    subject: input.subject,
+    body: input.body,
+    delivered: true,
+  });
+  message.status = "replied";
+  await message.save();
+
+  return message.toObject();
 }

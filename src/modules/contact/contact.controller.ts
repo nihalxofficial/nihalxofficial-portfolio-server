@@ -1,39 +1,77 @@
-import type { Request, Response } from "express";
-import { z } from "zod";
-import { ApiError } from "../../utils/apiError";
+import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
-import { ContactMessageModel } from "./contact.model";
-import { createContent, getContent, listContent, removeContent, updateContent } from "./contact.service";
+import {
+  createContactMessage,
+  deleteContactMessage,
+  getContactMessage,
+  listContactMessages,
+  replyToContactMessage,
+  updateContactStatus,
+} from "./contact.service";
+import type { ContactListQuery } from "./contact.validator";
 
-const listQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).optional(),
-  limit: z.coerce.number().int().min(1).max(100).optional(),
-  q: z.string().trim().max(120).optional(),
-  sort: z.string().trim().max(120).optional(),
+export const submitContact = catchAsync(async (req, res) => {
+  const message = await createContactMessage(req.body, req.headers["user-agent"] ?? "");
+
+  return sendResponse(res, 201, {
+    message: "Thanks for reaching out. Your message has been received.",
+    data: { id: message._id, createdAt: message.createdAt },
+  });
 });
 
-export async function listContactMessages(req: Request, res: Response) {
-  const query = listQuerySchema.parse(req.query);
-  const { items, meta } = await listContent(ContactMessageModel, query);
-  return sendResponse(res, 200, { message: "Messages loaded", data: items, meta });
-}
+export const getMessages = catchAsync(async (req, res) => {
+  const query = req.query as unknown as ContactListQuery;
+  const page = query.page ?? 1;
+  const limit = Math.min(100, query.limit ?? 20);
 
-export async function readContactMessage(req: Request, res: Response) {
-  const data = await getContent(ContactMessageModel, String(req.params.id ?? ""));
-  return sendResponse(res, 200, { message: "Message loaded", data });
-}
+  const { items, meta, unreadCount } = await listContactMessages({
+    status: query.status,
+    search: query.search,
+    sort: query.sort,
+    dir: query.dir,
+    delivery: query.delivery,
+    from: query.from,
+    to: query.to,
+    page,
+    limit,
+    skip: (page - 1) * limit,
+  });
 
-export async function createContactMessage(req: Request, res: Response) {
-  const data = await createContent(ContactMessageModel, req.body);
-  return sendResponse(res, 201, { message: "Message created", data });
-}
+  res.setHeader("X-Unread-Count", String(unreadCount));
 
-export async function updateContactMessage(req: Request, res: Response) {
-  const data = await updateContent(ContactMessageModel, String(req.params.id ?? ""), req.body);
-  return sendResponse(res, 200, { message: "Message updated", data });
-}
+  return sendResponse(res, 200, {
+    message: "Messages retrieved",
+    data: items,
+    meta: { ...meta, unreadCount },
+  });
+});
 
-export async function deleteContactMessage(req: Request, res: Response) {
-  const data = await removeContent(ContactMessageModel, String(req.params.id ?? ""));
-  return sendResponse(res, 200, { message: "Message deleted", data });
-}
+export const getMessage = catchAsync(async (req, res) => {
+  const message = await getContactMessage(String(req.params.id));
+
+  return sendResponse(res, 200, { message: "Message retrieved", data: message });
+});
+
+export const replyToMessage = catchAsync(async (req, res) => {
+  const message = await replyToContactMessage(String(req.params.id), {
+    ...req.body,
+    ccOwner: req.body.ccOwner !== false,
+  });
+
+  return sendResponse(res, 200, {
+    message: "Reply sent",
+    data: { replies: message.replies, status: message.status },
+  });
+});
+
+export const patchMessageStatus = catchAsync(async (req, res) => {
+  const updated = await updateContactStatus(String(req.params.id), req.body.status);
+
+  return sendResponse(res, 200, { message: "Message updated", data: updated });
+});
+
+export const removeMessage = catchAsync(async (req, res) => {
+  await deleteContactMessage(String(req.params.id));
+
+  return sendResponse(res, 200, { message: "Message deleted" });
+});

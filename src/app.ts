@@ -10,7 +10,7 @@ import { aiRouter, aiAdminRouter } from "./modules/ai/ai.route";
 import { analyticsAdminRouter, analyticsPublicRouter } from "./modules/analytics/analytics.route";
 import { authRouter } from "./modules/auth/auth.route";
 import { certificationsRouter } from "./modules/certifications/certifications.route";
-import { contactRouter } from "./modules/contact/contact.route";
+import { contactAdminRouter, contactPublicRouter } from "./modules/contact/contact.route";
 import { educationRouter } from "./modules/education/education.route";
 import { experienceRouter } from "./modules/experience/experience.route";
 import { heroRouter } from "./modules/hero/hero.route";
@@ -26,6 +26,7 @@ import { settingsRouter } from "./modules/settings/settings.route";
 import { skillsRouter } from "./modules/skills/skills.route";
 import { statisticsRouter } from "./modules/statistics/statistics.route";
 import { testimonialsRouter } from "./modules/testimonials/testimonials.route";
+import { contentRouter } from "./modules/content/content.route";
 
 export function createApp() {
   const app = express();
@@ -71,12 +72,12 @@ export function createApp() {
   const api = express.Router();
 
   api.use("/portfolio", portfolioRouter);
-  api.use("/contact", contactRouter);
+  api.use("/contact", contactPublicRouter);
   api.use("/analytics", analyticsPublicRouter);
   api.use("/ai", aiRouter);
   api.use("/auth", authRouter);
 
-  api.use("/admin/messages", contactRouter);
+  api.use("/admin/messages", contactAdminRouter);
   api.use("/admin/ai", aiAdminRouter);
   api.use("/admin/analytics", analyticsAdminRouter);
 
@@ -96,6 +97,9 @@ export function createApp() {
   api.use("/admin/experience", experienceRouter);
   api.use("/admin/skills", skillsRouter);
   api.use("/admin/media", mediaRouter);
+
+  // Content CRUD, dashboard overview & dynamic schema description
+  api.use("/admin", contentRouter);
 
   app.use("/api/v1", api);
 
