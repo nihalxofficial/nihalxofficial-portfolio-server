@@ -1,70 +1,39 @@
 import type { Request, Response } from "express";
-import { catchAsync } from "../../utils/catchAsync";
-import { parsePagination, sendResponse } from "../../utils/sendResponse";
-import {
-  deleteMedia,
-  listMedia,
-  uploadBase64,
-  uploadFromUrl,
-} from "./media.service";
-import type { UploadFromUrlInput } from "./media.validator";
+import { z } from "zod";
+import { ApiError } from "../../utils/apiError";
+import { sendResponse } from "../../utils/sendResponse";
+import { MediaAssetModel } from "./models";
+import { createContent, getContent, listContent, removeContent, updateContent } from "./media.service";
 
-/** JSON upload: the dashboard reads the file with FileReader and posts it. */
-export const uploadImage = catchAsync(async (req: Request, res: Response) => {
-  const body = req.body as {
-    image: string;
-    mimeType?: string;
-    name?: string;
-    folder?: string;
-  };
-
-  const asset = await uploadBase64({
-    image: body.image,
-    mimeType: body.mimeType,
-    name: body.name,
-    folder: body.folder,
-    uploadedBy: req.admin?.uid,
-  });
-
-  return sendResponse(res, 201, { message: "Image uploaded", data: asset });
+const listQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+  q: z.string().trim().max(120).optional(),
+  sort: z.string().trim().max(120).optional(),
 });
 
-/** Import an image that is already hosted somewhere else. */
-export const uploadImageFromUrl = catchAsync(async (req: Request, res: Response) => {
-  const body = req.body as UploadFromUrlInput;
+export async function listMedia(req: Request, res: Response) {
+  const query = listQuerySchema.parse(req.query);
+  const { items, meta } = await listContent(MediaAssetModel, query);
+  return sendResponse(res, 200, { message: "Media loaded", data: items, meta });
+}
 
-  const asset = await uploadFromUrl({
-    url: body.url,
-    folder: body.folder,
-    name: body.name,
-    uploadedBy: req.admin?.uid,
-  });
+export async function readMediaAsset(req: Request, res: Response) {
+  const data = await getContent(MediaAssetModel, String(req.params.id ?? ""));
+  return sendResponse(res, 200, { message: "Media loaded", data });
+}
 
-  return sendResponse(res, 201, { message: "Image imported", data: asset });
-});
+export async function createMediaAsset(req: Request, res: Response) {
+  const data = await createContent(MediaAssetModel, req.body);
+  return sendResponse(res, 201, { message: "Media created", data });
+}
 
-export const listImages = catchAsync(async (req: Request, res: Response) => {
-  const { page, limit, skip } = parsePagination(req.query as Record<string, unknown>, {
-    page: 1,
-    limit: 24,
-  });
+export async function updateMediaAsset(req: Request, res: Response) {
+  const data = await updateContent(MediaAssetModel, String(req.params.id ?? ""), req.body);
+  return sendResponse(res, 200, { message: "Media updated", data });
+}
 
-  const result = await listMedia({
-    folder: typeof req.query.folder === "string" ? req.query.folder : undefined,
-    search: typeof req.query.search === "string" ? req.query.search : undefined,
-    page,
-    limit,
-    skip,
-  });
-
-  return sendResponse(res, 200, {
-    message: "Media library",
-    data: result.items,
-    meta: result.meta,
-  });
-});
-
-export const removeImage = catchAsync(async (req: Request, res: Response) => {
-  const result = await deleteMedia(String(req.params.id));
-  return sendResponse(res, 200, { message: "Image deleted", data: result });
-});
+export async function deleteMediaAsset(req: Request, res: Response) {
+  const data = await removeContent(MediaAssetModel, String(req.params.id ?? ""));
+  return sendResponse(res, 200, { message: "Media deleted", data });
+}

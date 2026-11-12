@@ -1,5 +1,5 @@
 import type { Request } from "express";
-import { ProjectModel } from "../admin/models";
+import { ProjectModel } from "../projects/models";
 import { VisitModel } from "./models";
 import { resolveGeo } from "../../utils/geo";
 import { parseUserAgent } from "../../utils/userAgent";

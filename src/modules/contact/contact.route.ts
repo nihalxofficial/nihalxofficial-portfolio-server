@@ -1,35 +1,18 @@
 import { Router } from "express";
 import { requireAdmin } from "../../middlewares/auth";
-import { validate } from "../../middlewares/validate";
-import { contactLimiter } from "../../middlewares/rateLimit";
 import {
-  getMessage,
-  getMessages,
-  patchMessageStatus,
-  removeMessage,
-  replyToMessage,
-  submitContact,
+  createContactMessage,
+  deleteContactMessage,
+  listContactMessages,
+  readContactMessage,
+  updateContactMessage,
 } from "./contact.controller";
-import {
-  contactQuerySchema,
-  createContactSchema,
-  replyContactSchema,
-  updateContactSchema,
-} from "./contact.validator";
 
-// Public — mounted under /api/v1/contact
-export const contactPublicRouter = Router();
-contactPublicRouter.post("/", contactLimiter, validate({ body: createContactSchema }), submitContact);
+export const contactRouter = Router();
+contactRouter.use(requireAdmin);
 
-// Admin — mounted under /api/v1/admin/messages
-export const contactAdminRouter = Router();
-contactAdminRouter.use(requireAdmin);
-contactAdminRouter.get("/", validate({ query: contactQuerySchema }), getMessages);
-contactAdminRouter.get("/:id", getMessage);
-contactAdminRouter.post(
-  "/:id/reply",
-  validate({ body: replyContactSchema }),
-  replyToMessage,
-);
-contactAdminRouter.patch("/:id", validate({ body: updateContactSchema }), patchMessageStatus);
-contactAdminRouter.delete("/:id", removeMessage);
+contactRouter.get("/", listContactMessages);
+contactRouter.post("/", createContactMessage);
+contactRouter.patch("/:id", updateContactMessage);
+contactRouter.get("/:id", readContactMessage);
+contactRouter.delete("/:id", deleteContactMessage);

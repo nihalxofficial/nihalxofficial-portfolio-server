@@ -7,12 +7,25 @@ import { env } from "./config/env";
 import { isFirebaseConfigured } from "./config/firebase";
 import { errorHandler, notFoundHandler } from "./middlewares/error";
 import { aiRouter, aiAdminRouter } from "./modules/ai/ai.route";
-import { adminRouter } from "./modules/admin/content.route";
 import { analyticsAdminRouter, analyticsPublicRouter } from "./modules/analytics/analytics.route";
 import { authRouter } from "./modules/auth/auth.route";
-import { contactAdminRouter, contactPublicRouter } from "./modules/contact/contact.route";
+import { certificationsRouter } from "./modules/certifications/certifications.route";
+import { contactRouter } from "./modules/contact/contact.route";
+import { educationRouter } from "./modules/education/education.route";
+import { experienceRouter } from "./modules/experience/experience.route";
+import { heroRouter } from "./modules/hero/hero.route";
+import { aboutRouter } from "./modules/about/about.route";
+import { mediaRouter } from "./modules/media/media.route";
+import { navigationRouter } from "./modules/navigation/navigation.route";
 import { portfolioRouter } from "./modules/portfolio/portfolio.route";
-import { mediaAdminRouter } from "./modules/media/media.route";
+import { postsRouter } from "./modules/posts/posts.route";
+import { projectsRouter } from "./modules/projects/projects.route";
+import { sectionsRouter } from "./modules/sections/sections.route";
+import { servicesRouter } from "./modules/services/services.route";
+import { settingsRouter } from "./modules/settings/settings.route";
+import { skillsRouter } from "./modules/skills/skills.route";
+import { statisticsRouter } from "./modules/statistics/statistics.route";
+import { testimonialsRouter } from "./modules/testimonials/testimonials.route";
 
 export function createApp() {
   const app = express();
@@ -25,8 +38,6 @@ export function createApp() {
   app.use(
     cors({
       origin: (origin, callback) => {
-        // Allow same-origin/server-to-server calls (no Origin header) and
-        // every explicitly configured frontend origin.
         if (!origin || env.corsOrigins.includes(origin)) {
           callback(null, true);
           return;
@@ -40,7 +51,7 @@ export function createApp() {
 
   // Media uploads carry base64 images, so this router brings its own larger
   // json limit and must be mounted before the small global parser below.
-  app.use("/api/v1/admin/media", mediaAdminRouter);
+  app.use("/api/v1/admin/media", mediaRouter);
 
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ extended: true, limit: "1mb" }));
@@ -61,17 +72,31 @@ export function createApp() {
   const api = express.Router();
 
   api.use("/portfolio", portfolioRouter);
-  api.use("/contact", contactPublicRouter);
+  api.use("/contact", contactRouter);
   api.use("/analytics", analyticsPublicRouter);
   api.use("/ai", aiRouter);
   api.use("/auth", authRouter);
 
-  api.use("/admin/messages", contactAdminRouter);
+  api.use("/admin/messages", contactRouter);
   api.use("/admin/ai", aiAdminRouter);
   api.use("/admin/analytics", analyticsAdminRouter);
-  // Generic content CRUD + dashboard overview, mounted last so the specific
-  // admin routers above keep their own middleware.
-  api.use("/admin", adminRouter);
+
+  // Feature-based admin routers (Sparq-Server layered architecture)
+  api.use("/admin/projects", projectsRouter);
+  api.use("/admin/posts", postsRouter);
+  api.use("/admin/hero", heroRouter);
+  api.use("/admin/about", aboutRouter);
+  api.use("/admin/statistics", statisticsRouter);
+  api.use("/admin/services", servicesRouter);
+  api.use("/admin/testimonials", testimonialsRouter);
+  api.use("/admin/navigation", navigationRouter);
+  api.use("/admin/sections", sectionsRouter);
+  api.use("/admin/settings", settingsRouter);
+  api.use("/admin/certifications", certificationsRouter);
+  api.use("/admin/education", educationRouter);
+  api.use("/admin/experience", experienceRouter);
+  api.use("/admin/skills", skillsRouter);
+  api.use("/admin/media", mediaRouter);
 
   app.use("/api/v1", api);
 

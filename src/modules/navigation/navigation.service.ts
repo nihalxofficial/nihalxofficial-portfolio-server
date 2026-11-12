@@ -1,21 +1,7 @@
 import { Types } from "mongoose";
-import {
-  BlogPostModel,
-  ContactMessageModel,
-  MediaAssetModel,
-  ProjectModel,
-  SiteSettingsModel,
-  SkillModel,
-} from "./models";
+import { NavigationModel } from "./models";
 import { ApiError } from "../../utils/apiError";
 import { parsePagination } from "../../utils/sendResponse";
-
-/**
- * Content service shared by every dashboard entity.
- *
- * Each function receives a Mongoose model directly (no central registry).
- * The controller resolves which model to use based on the entity key.
- */
 
 export interface ListContentOptions {
   page?: unknown;
@@ -29,8 +15,6 @@ export interface ListContentResult {
   meta: { page: number; limit: number; total: number; totalPages: number };
 }
 
-type ContentModel = any;
-
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -39,12 +23,8 @@ function assertObjectId(id: string) {
   if (!Types.ObjectId.isValid(id)) throw ApiError.badRequest("Invalid identifier");
 }
 
-/**
- * List documents from any model.
- * `sort` defaults to { order: 1, createdAt: -1 } when supported.
- */
 export async function listContent(
-  model: ContentModel,
+  model: any,
   options: ListContentOptions = {},
 ): Promise<ListContentResult> {
   const { page, limit, skip } = parsePagination(options as Record<string, unknown>, {
@@ -56,7 +36,6 @@ export async function listContent(
   const query = typeof options.q === "string" ? options.q.trim() : "";
 
   if (query) {
-    // Search across common text fields if they exist on the schema
     const pattern = new RegExp(escapeRegex(query), "i");
     filter.$or = [
       { title: pattern },
@@ -72,7 +51,7 @@ export async function listContent(
       { features: { $in: [pattern] } },
       { skills: { $in: [pattern] } },
       { tags: { $in: [pattern] } },
-    ].filter((cond) => cond !== undefined);
+    ];
   }
 
   const defaultSort: Record<string, 1 | -1> = { order: 1, createdAt: -1 };
@@ -105,26 +84,20 @@ export async function listContent(
   };
 }
 
-export async function getContent(model: ContentModel, id: string) {
+export async function getContent(model: any, id: string) {
   assertObjectId(id);
   const doc = await model.findById(id).lean();
   if (!doc) throw ApiError.notFound("Record not found");
   return doc as Record<string, unknown>;
 }
 
-export async function getSingleton(model: ContentModel) {
-  const doc = await model.findOne().lean();
-  if (!doc) throw ApiError.notFound("Record not found");
-  return doc as Record<string, unknown>;
-}
-
-export async function createContent(model: ContentModel, payload: Record<string, unknown>) {
+export async function createContent(model: any, payload: Record<string, unknown>) {
   const created = await model.create(payload);
   return created.toObject() as Record<string, unknown>;
 }
 
 export async function updateContent(
-  model: ContentModel,
+  model: any,
   id: string,
   payload: Record<string, unknown>,
 ) {
@@ -139,66 +112,16 @@ export async function updateContent(
   return doc as Record<string, unknown>;
 }
 
-export async function updateSingleton(model: ContentModel, payload: Record<string, unknown>) {
-  const doc = await model
-    .findOneAndUpdate({}, { $set: payload }, { new: true, upsert: true, setDefaultsOnInsert: true })
-    .lean();
-  return doc as Record<string, unknown>;
-}
-
-export async function removeContent(model: ContentModel, id: string) {
+export async function removeContent(model: any, id: string) {
   assertObjectId(id);
   const doc = await model.findByIdAndDelete(id).lean();
   if (!doc) throw ApiError.notFound("Record not found");
   return { id };
 }
 
-// ─── Dashboard overview ──────────────────────────────────────────────────────
-
-export async function getOverview() {
-  const [
-    projects,
-    publishedProjects,
-    featuredProjects,
-    posts,
-    publishedPosts,
-    skills,
-    messages,
-    unreadMessages,
-    media,
-  ] = await Promise.all([
-    ProjectModel.countDocuments({}),
-    ProjectModel.countDocuments({ isPublished: true }),
-    ProjectModel.countDocuments({ isFeatured: true }),
-    BlogPostModel.countDocuments({}),
-    BlogPostModel.countDocuments({ isPublished: true }),
-    SkillModel.countDocuments({}),
-    ContactMessageModel.countDocuments({}),
-    ContactMessageModel.countDocuments({ status: "unread" }),
-    MediaAssetModel.find({}).select("sizeBytes").lean(),
-  ]);
-
-  const [recentProjects, recentMessages, settings] = await Promise.all([
-    ProjectModel.find({}).sort({ createdAt: -1 }).limit(5).lean(),
-    ContactMessageModel.find({}).sort({ createdAt: -1 }).limit(5).lean(),
-    SiteSettingsModel.findOne({ key: "main" }).lean(),
-  ]);
-
-  return {
-    counts: {
-      projects,
-      publishedProjects,
-      featuredProjects,
-      posts,
-      publishedPosts,
-      skills,
-      messages,
-      unreadMessages,
-      media: media.length,
-      mediaBytes: media.reduce((sum, item) => sum + (item.sizeBytes ?? 0), 0),
-    },
-    recentProjects,
-    recentMessages,
-    siteName: settings?.siteName ?? "",
-  };
+export async function updateSingleton(model: any, payload: Record<string, unknown>) {
+  const doc = await model
+    .findOneAndUpdate({}, { $set: payload }, { new: true, upsert: true, setDefaultsOnInsert: true })
+    .lean();
+  return doc as Record<string, unknown>;
 }

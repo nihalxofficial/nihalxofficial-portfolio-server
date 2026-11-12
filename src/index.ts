@@ -1,7 +1,6 @@
 import { createApp } from "./app";
 import { connectDatabase, disconnectDatabase } from "./config/db";
 import { env } from "./config/env";
-import { verifySmtp } from "./modules/contact/contact.service";
 
 async function bootstrap() {
   await connectDatabase();
@@ -11,13 +10,7 @@ async function bootstrap() {
     // eslint-disable-next-line no-console
     console.log(`[server] listening on http://localhost:${env.PORT} (${env.NODE_ENV})`);
 
-    // Wrong SMTP credentials should show up now, not on the first inquiry.
-    if (env.smtpConfigured) {
-      void verifySmtp().then((ok) => {
-        // eslint-disable-next-line no-console
-        console.log(`[server] SMTP ${ok ? "ready" : "not reachable, check the credentials"}`);
-      });
-    } else {
+    if (!env.smtpConfigured) {
       // eslint-disable-next-line no-console
       console.warn("[server] SMTP not configured, contact messages will only be stored");
     }

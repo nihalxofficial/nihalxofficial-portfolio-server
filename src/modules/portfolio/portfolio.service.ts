@@ -1,19 +1,17 @@
-import {
-  AboutModel,
-  BlogPostModel,
-  CertificationModel,
-  EducationModel,
-  ExperienceModel,
-  HeroModel,
-  NavigationModel,
-  ProjectModel,
-  SectionModel,
-  ServiceModel,
-  SiteSettingsModel,
-  SkillModel,
-  StatisticModel,
-  TestimonialModel,
-} from "../admin/models";
+import { AboutModel } from "../about/models";
+import { BlogPostModel } from "../posts/models";
+import { CertificationModel } from "../certifications/models";
+import { EducationModel } from "../education/models";
+import { ExperienceModel } from "../experience/models";
+import { HeroModel } from "../hero/models";
+import { NavigationModel } from "../navigation/models";
+import { ProjectModel } from "../projects/models";
+import { SectionModel } from "../sections/models";
+import { ServiceModel } from "../services/models";
+import { SiteSettingsModel } from "../settings/models";
+import { SkillModel } from "../skills/models";
+import { StatisticModel } from "../statistics/models";
+import { TestimonialModel } from "../testimonials/models";
 
 export interface SkillGroup {
   category: string;

@@ -1,2 +1,2 @@
-export type { Project } from "../../admin/models/project.model";
-export { ProjectModel } from "../../admin/models/project.model";
+export type { Project } from "../../projects/models/project.model";
+export { ProjectModel } from "../../projects/models/project.model";

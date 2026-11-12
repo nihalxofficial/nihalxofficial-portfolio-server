@@ -1,2 +1,2 @@
-export type { MediaAsset } from "../../admin/models/media-asset.model";
-export { MediaAssetModel } from "../../admin/models/media-asset.model";
+export type { MediaAsset } from "./media-asset.model";
+export { MediaAssetModel } from "./media-asset.model";

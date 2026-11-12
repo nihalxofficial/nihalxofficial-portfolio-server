@@ -9,13 +9,11 @@
  */
 import mongoose from "mongoose";
 import { connectDatabase, disconnectDatabase } from "../config/db";
-import {
-  AboutModel,
-  HeroModel,
-  NavigationModel,
-  SectionModel,
-  SiteSettingsModel,
-} from "../modules/admin/models";
+import { AboutModel } from "../modules/about/models";
+import { HeroModel } from "../modules/hero/models";
+import { NavigationModel } from "../modules/navigation/models";
+import { SectionModel } from "../modules/sections/models";
+import { SiteSettingsModel } from "../modules/settings/models";
 
 /** Same icon map the header pill falls back to, keyed by anchor target. */
 const ICON_BY_TARGET: Record<string, string> = {

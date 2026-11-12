@@ -1,18 +1,16 @@
 import { env } from "../../config/env";
 import { ApiError } from "../../utils/apiError";
 import { getClient, getModelChain, isAssistantConfigured, isTransientAiError } from "./ai.client";
-import {
-  AboutModel,
-  CertificationModel,
-  EducationModel,
-  ExperienceModel,
-  HeroModel,
-  ProjectModel,
-  ServiceModel,
-  SiteSettingsModel,
-  SkillModel,
-  StatisticModel,
-} from "../admin/models";
+import { AboutModel } from "../about/models";
+import { CertificationModel } from "../certifications/models";
+import { EducationModel } from "../education/models";
+import { ExperienceModel } from "../experience/models";
+import { HeroModel } from "../hero/models";
+import { ProjectModel } from "../projects/models";
+import { ServiceModel } from "../services/models";
+import { SiteSettingsModel } from "../settings/models";
+import { SkillModel } from "../skills/models";
+import { StatisticModel } from "../statistics/models";
 import type { ChatMessage } from "./ai.validator";
 
 export { isAssistantConfigured } from "./ai.client";

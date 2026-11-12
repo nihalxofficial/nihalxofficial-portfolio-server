@@ -10,22 +10,20 @@
  */
 import mongoose from "mongoose";
 import { connectDatabase, disconnectDatabase } from "../config/db";
-import {
-  AboutModel,
-  BlogPostModel,
-  CertificationModel,
-  EducationModel,
-  ExperienceModel,
-  HeroModel,
-  NavigationModel,
-  ProjectModel,
-  SectionModel,
-  ServiceModel,
-  SiteSettingsModel,
-  SkillModel,
-  StatisticModel,
-  TestimonialModel,
-} from "../modules/admin/models";
+import { AboutModel } from "../modules/about/models";
+import { BlogPostModel } from "../modules/posts/models";
+import { CertificationModel } from "../modules/certifications/models";
+import { EducationModel } from "../modules/education/models";
+import { ExperienceModel } from "../modules/experience/models";
+import { HeroModel } from "../modules/hero/models";
+import { NavigationModel } from "../modules/navigation/models";
+import { ProjectModel } from "../modules/projects/models";
+import { SectionModel } from "../modules/sections/models";
+import { ServiceModel } from "../modules/services/models";
+import { SiteSettingsModel } from "../modules/settings/models";
+import { SkillModel } from "../modules/skills/models";
+import { StatisticModel } from "../modules/statistics/models";
+import { TestimonialModel } from "../modules/testimonials/models";
 
 const showcase = (slug: string) => `/project-images/showcase/${slug}.png`;
 
