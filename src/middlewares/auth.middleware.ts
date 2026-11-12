@@ -26,11 +26,19 @@ const clientUrl =
   env.FRONTEND_URL ||
   "http://localhost:3000";
 
+/**
+ * The public site origin is the JWT issuer and, from a browser, the JWKS host.
+ * Inside a container network the API may not be able to resolve that public
+ * origin, so AUTH_JWKS_URL can point at the web service directly while the
+ * issuer check keeps using the public URL.
+ */
+const jwksUrl = process.env.AUTH_JWKS_URL || `${clientUrl}/api/auth/jwks`;
+
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
 
 function getJwks() {
   if (!jwks) {
-    jwks = createRemoteJWKSet(new URL(`${clientUrl}/api/auth/jwks`));
+    jwks = createRemoteJWKSet(new URL(jwksUrl));
   }
   return jwks;
 }
