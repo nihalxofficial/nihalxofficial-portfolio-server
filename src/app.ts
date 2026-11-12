@@ -61,7 +61,6 @@ export function createApp() {
       success: true,
       status: "ok",
       environment: env.NODE_ENV,
-      auth: "better-auth",
       assistant: env.GEMINI_API_KEY ? "configured" : "missing",
       email: env.smtpConfigured ? "configured" : "missing",
       media: env.IMGBB_API_KEY ? "configured" : "missing",

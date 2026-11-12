@@ -38,16 +38,11 @@ function getJwks() {
 }
 
 function readToken(req: Request): string | undefined {
-  const headerToken = req.headers.authorization?.startsWith("Bearer ")
-    ? req.headers.authorization.slice(7).trim()
-    : req.headers.authorization?.split(" ")[1];
-
   return (
-    headerToken ||
+    req.headers.authorization?.split(" ")[1] ||
     (req.query.token as string | undefined) ||
-    req.cookies?.["better-auth.session_token"] ||
-    req.cookies?.["__Secure-better-auth.session_token"] ||
-    req.cookies?.admin_token
+    req.cookies?.token ||
+    req.cookies?.session_token
   );
 }
 
