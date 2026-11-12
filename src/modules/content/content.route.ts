@@ -65,3 +65,4 @@ contentRouter.patch("/content/:entity", validateBody("update"), patchEntity);
 contentRouter.get("/content/:entity/:id", readEntity);
 contentRouter.patch("/content/:entity/:id", validateBody("update"), patchEntity);
 contentRouter.delete("/content/:entity/:id", deleteEntity);
+

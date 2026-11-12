@@ -8,8 +8,6 @@ export type AuthUser = {
   email?: string;
   name?: string;
   role?: string;
-  roles?: string[];
-  activeRole?: string;
 };
 
 declare global {
@@ -94,26 +92,11 @@ function shapeFromRecord(base: AuthUser, record: any): AuthUser {
 
   const email = (record?.email || base.email || "").toLowerCase();
   const isAdmin = adminEmails.includes(email);
-
-  let roles: string[] = Array.isArray(record?.roles)
-    ? record.roles.filter((val: unknown): val is string => typeof val === "string")
-    : record?.role
-      ? [record.role]
-      : ["user"];
-
-  let role: string =
-    record?.activeRole || record?.role || (isAdmin ? "admin" : "user");
-
-  if (isAdmin) {
-    if (!roles.includes("admin")) roles.push("admin");
-    role = "admin";
-  }
+  const role: string = isAdmin ? "admin" : record?.role || base.role || "user";
 
   return {
     ...base,
     role,
-    roles,
-    activeRole: role,
   };
 }
 

@@ -11,10 +11,7 @@ router.get(
   requireAuth,
   catchAsync(async (req, res) => {
     const user = req.user;
-    const isAdmin =
-      user?.role === "admin" ||
-      user?.activeRole === "admin" ||
-      (Array.isArray(user?.roles) && user.roles.includes("admin"));
+    const isAdmin = user?.role === "admin" || user?.role === "demoadmin";
 
     return sendResponse(res, 200, {
       message: "Token verified",
@@ -22,10 +19,8 @@ router.get(
         uid: user?.id ?? "",
         email: user?.email ?? null,
         name: user?.name ?? null,
-        role: user?.role,
-        roles: user?.roles,
+        role: user?.role ?? "user",
         isAdmin,
-        firebaseConfigured: true,
         adminCount: isAdmin ? 1 : 0,
       },
     });
@@ -44,9 +39,7 @@ router.get(
         uid: user?.id,
         email: user?.email ?? null,
         name: user?.name ?? null,
-        role: user?.role,
-        roles: user?.roles,
-        firebaseConfigured: true,
+        role: user?.role ?? "admin",
         adminCount: 1,
       },
     });
@@ -54,4 +47,3 @@ router.get(
 );
 
 export const authRouter = router;
-export default router;

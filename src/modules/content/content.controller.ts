@@ -113,3 +113,4 @@ export async function patchVisibility(req: Request, res: Response) {
   const data = await updateComponentVisibility(String(componentKey), Boolean(isVisible));
   return sendResponse(res, 200, { message: "Component visibility updated", data });
 }
+
