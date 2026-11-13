@@ -64,8 +64,14 @@ if (!parsed.success) {
   const issues = parsed.error.issues
     .map((issue) => `  • ${issue.path.join(".") || "(root)"}: ${issue.message}`)
     .join("\n");
+  const message = `[env] Invalid environment configuration:\n${issues}`;
+
+  // A serverless function has no process to restart: throwing reports the
+  // problem in the invocation log instead of killing the runtime silently.
+  if (process.env.VERCEL) throw new Error(message);
+
   // eslint-disable-next-line no-console
-  console.error(`\n[env] Invalid environment configuration:\n${issues}\n`);
+  console.error(`\n${message}\n`);
   process.exit(1);
 }
 

@@ -1,7 +1,7 @@
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import express from "express";
+import express, { type RequestHandler } from "express";
 import helmet from "helmet";
 import { env } from "./config/env";
 import { errorMiddleware } from "./middlewares/error.middleware";
@@ -57,7 +57,7 @@ export function createApp() {
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
-  app.get("/health", (_req, res) => {
+  const health: RequestHandler = (_req, res) => {
     res.json({
       success: true,
       status: "ok",
@@ -67,9 +67,15 @@ export function createApp() {
       media: env.IMGBB_API_KEY ? "configured" : "missing",
       timestamp: new Date().toISOString(),
     });
-  });
+  };
+
+  // Bare `/health` for Docker and uptime checks; the versioned alias keeps the
+  // endpoint reachable when the app runs as a single `/api/*` serverless function.
+  app.get("/health", health);
 
   const api = express.Router();
+
+  api.get("/health", health);
 
   api.use("/portfolio", portfolioRouter);
   api.use("/contact", contactPublicRouter);

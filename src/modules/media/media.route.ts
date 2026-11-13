@@ -10,8 +10,10 @@ export const mediaRouter = Router();
 // Everything below is admin-only, checked before any body is parsed.
 mediaRouter.use(requireAuth, requireRole("admin"));
 
-// Support up to 14MB base64 images before the default limit
-mediaRouter.use(express.json({ limit: "14mb" }));
+// Support up to 14MB base64 images before the default limit. Serverless hosts
+// cap request bodies well below that, so refuse early with a readable error.
+const mediaJsonLimit = process.env.VERCEL ? "3.5mb" : "14mb";
+mediaRouter.use(express.json({ limit: mediaJsonLimit }));
 
 mediaRouter.get("/", validate({ query: listMediaQuerySchema }), listImages);
 mediaRouter.post("/", validate({ body: uploadBase64Schema }), uploadImage);
