@@ -236,7 +236,8 @@ export async function reorderNavigationItems(items: Array<{ id?: string; _id?: s
   const operations = items
     .filter((item) => item.id || item._id)
     .map((item) => {
-      const id = item._id || item.id;
+      const id = String(item._id || item.id);
+      assertObjectId(id);
       return {
         updateOne: {
           filter: { _id: new Types.ObjectId(id) },
