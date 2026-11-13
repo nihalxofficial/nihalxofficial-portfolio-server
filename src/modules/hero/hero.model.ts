@@ -27,10 +27,6 @@ const heroSchema = new Schema(
       label: { type: String, default: "Download CV" },
       href: { type: String, default: "/Nihal_Full_Stack_Developer_Resume.pdf" },
     },
-    terminal: {
-      command: { type: String, default: "whoami" },
-      lines: { type: [String], default: [] },
-    },
     rotator: {
       prefix: { type: String, default: "" },
       lines: { type: [String], default: [] },

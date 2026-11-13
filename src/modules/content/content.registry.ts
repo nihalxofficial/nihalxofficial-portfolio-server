@@ -322,14 +322,6 @@ const ENTITIES: EntityDef[] = [
       linkFields("primaryCta"),
       linkFields("secondaryCta"),
       {
-        name: "terminal",
-        kind: "object",
-        children: [
-          { name: "command", kind: "string" },
-          { name: "lines", kind: "list" },
-        ],
-      },
-      {
         name: "rotator",
         kind: "object",
         children: [

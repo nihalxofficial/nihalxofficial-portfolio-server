@@ -352,15 +352,6 @@ async function seed() {
     availability: { label: "Available for remote work", isAvailable: true },
     primaryCta: { label: "View My Projects", href: "#projects" },
     secondaryCta: { label: "Download CV", href: "/Nihal_Full_Stack_Developer_Resume.pdf" },
-    terminal: {
-      command: "whoami",
-      lines: [
-        "Nihal Uddin Bijoy",
-        "Full-Stack Developer (MERN)",
-        "NEXT: learn Go, AI & System Design",
-        "Building cool things...",
-      ],
-    },
     portraitUrl: "/portfolio/bijoy.png",
     // The role line is a typewriter — these phrases cycle in the hero banner.
     // Editable in the dashboard (Hero section). `prefix` is unused now.
