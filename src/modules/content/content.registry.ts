@@ -462,6 +462,22 @@ const ENTITIES: EntityDef[] = [
           { name: "icon", kind: "string" },
         ],
       },
+      {
+        // Footer copy. Empty values fall back to the built-in defaults.
+        name: "footer",
+        kind: "object",
+        children: [
+          { name: "tagline", kind: "string", max: 80 },
+          { name: "description", kind: "text" },
+          { name: "navigationHeading", kind: "string", max: 40 },
+          { name: "elsewhereHeading", kind: "string", max: 40 },
+          { name: "resumeLabel", kind: "string", max: 40 },
+          { name: "ctaLabel", kind: "string", max: 40 },
+          { name: "copyright", kind: "string", max: 160 },
+          { name: "builtWith", kind: "string", max: 40 },
+          { name: "stack", kind: "list" },
+        ],
+      },
       { name: "resumeUrl", kind: "url" },
     ],
   },
